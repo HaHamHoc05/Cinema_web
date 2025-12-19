@@ -8,7 +8,7 @@ from django.http import JsonResponse
 from django.db.models import Q
 from django.core.exceptions import ValidationError
 
-from .models import Movie, Showtime, Booking, Ticket, Seat
+from .models import Movie, Showtime, Booking, Ticket, Seat, TicketPrice
 from .form import SignUpForm, ReviewForm, UserUpdateForm
 # Đảm bảo bạn đã có file services.py và hàm create_booking
 from .services import create_booking
@@ -66,6 +66,10 @@ def showtime_detail(request, showtime_id):
         booking__showtime=showtime,
         booking__status__in=['PAID', 'PENDING']
     ).values_list('seat_id', flat=True)
+
+    ticket_prices = TicketPrice.objects.filter(showtime=showtime)
+
+    price_map = {tp.seat_type: tp.price for tp in ticket_prices}
 
     return render(request, 'movies/showtime_detail.html', {
         'showtime': showtime,
