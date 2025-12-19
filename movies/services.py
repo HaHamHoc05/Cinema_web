@@ -53,7 +53,7 @@ def create_booking(user, showtime_id, seat_ids):
         booking_code=str(uuid.uuid4())[:8].upper(), #tao ma 8 ki tu random
         total_amount=0,
         status='PENDING',
-        expires_at=timezone.now() + timezone.timedelta(minustes=10)
+        expires_at=timezone.now() + timezone.timedelta(minutes=10)
     )
 
     # tao tung ve va tong tin
