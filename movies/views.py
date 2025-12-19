@@ -6,9 +6,12 @@ from django.views.decorators.http import require_POST
 from django.contrib import messages
 from django.http import JsonResponse
 from django.db.models import Q
-from .models import Movie, Showtime, Booking, Ticket, Seat, Review
-# SỬA LỖI Ở ĐÂY: đổi .forms thành .form (khớp với file bạn có)
+from django.core.exceptions import ValidationError
+
+from .models import Movie, Showtime, Booking, Ticket, Seat
 from .form import SignUpForm, ReviewForm, UserUpdateForm
+# Đảm bảo bạn đã có file services.py và hàm create_booking
+from .services import create_booking
 
 
 def movie_list(request):
@@ -33,78 +36,102 @@ def search_suggestions(request):
     return JsonResponse(results, safe=False)
 
 
+def movie_detail(request, movie_id):
+    movie = get_object_or_404(Movie, pk=movie_id)
+    showtimes = movie.showtimes.filter(is_active=True).order_by('start_time')
+    reviews = movie.reviews.all()
+    form = ReviewForm(request.POST or None)
+
+    if request.method == 'POST' and form.is_valid() and request.user.is_authenticated:
+        rv = form.save(commit=False)
+        rv.movie = movie
+        rv.user = request.user
+        rv.save()
+        messages.success(request, "Đã đăng đánh giá!")
+        return redirect('movie_detail', movie_id=movie_id)
+
+    return render(request, 'movies/movie_detail.html', {
+        'movie': movie,
+        'showtimes': showtimes,
+        'reviews': reviews,
+        'form': form
+    })
+
+
 def showtime_detail(request, showtime_id):
     showtime = get_object_or_404(Showtime, pk=showtime_id)
-    # QUAN TRỌNG: Phải order_by thì sơ đồ mới xếp đúng hàng A, B, C
     all_seats = Seat.objects.filter(screen=showtime.screen).order_by('row', 'number')
-    occupied_seats = Ticket.objects.filter(booking__showtime=showtime).values_list('seat_id', flat=True)
+
+    occupied_seats = Ticket.objects.filter(
+        booking__showtime=showtime,
+        booking__status__in=['PAID', 'PENDING']
+    ).values_list('seat_id', flat=True)
+
     return render(request, 'movies/showtime_detail.html', {
         'showtime': showtime,
         'all_seats': all_seats,
-        'occupied_seats': occupied_seats,
+        'occupied_seats': list(occupied_seats),
     })
 
 
 @login_required(login_url='login')
 @require_POST
 def book_tickets(request, showtime_id):
-    showtime = get_object_or_404(Showtime, pk=showtime_id)
     seat_ids = request.POST.getlist('selected_seats')
     if not seat_ids:
-        messages.error(request, "Vui lòng chọn ghế!")
+        messages.error(request, "Bạn chưa chọn ghế nào!")
         return redirect('showtime_detail', showtime_id=showtime_id)
 
-    total = 0
-    selected_seats = Seat.objects.filter(id__in=seat_ids)
-    for seat in selected_seats:
-        price = showtime.base_price
-        # Logic cộng tiền đơn giản
-        if seat.seat_type == 'VIP':
-            price += 10000
-        elif seat.seat_type == 'COUPLE':
-            price += 20000
-        total += price
+    try:
+        # Gọi Service xử lý transaction
+        booking = create_booking(request.user, showtime_id, seat_ids)
+        messages.success(request, "Đặt vé thành công! Vui lòng thanh toán.")
+        return redirect('booking_success', booking_id=booking.id)
 
-    booking = Booking.objects.create(user=request.user, showtime=showtime, total_amount=total, status='PENDING')
-    for seat in selected_seats:
-        Ticket.objects.create(booking=booking, seat=seat)
+    except ValidationError as e:
+        # SỬA LỖI Ở ĐÂY: Dùng e.messages hoặc str(e) thay vì e.message
+        error_msg = ""
+        if hasattr(e, 'message'):
+            error_msg = e.message
+        elif hasattr(e, 'messages'):
+            error_msg = ", ".join(e.messages)
+        else:
+            error_msg = str(e)
 
-    return redirect('booking_success', booking_id=booking.id)
+        messages.error(request, f"Lỗi đặt vé: {error_msg}")
+        return redirect('showtime_detail', showtime_id=showtime_id)
+
+    except Exception as e:
+        print(f"Error booking tickets: {e}")  # In lỗi ra console để debug
+        messages.error(request, "Có lỗi hệ thống xảy ra. Vui lòng thử lại.")
+        return redirect('showtime_detail', showtime_id=showtime_id)
 
 
 def booking_success(request, booking_id):
-    booking = get_object_or_404(Booking, pk=booking_id)
+    booking = get_object_or_404(Booking, pk=booking_id, user=request.user)
     return render(request, 'movies/booking_success.html', {'booking': booking})
 
 
-@login_required(login_url='login')
+@login_required
 def pay_booking(request, booking_id):
     booking = get_object_or_404(Booking, pk=booking_id, user=request.user)
     if booking.status == 'PENDING':
         booking.status = 'PAID'
+        # Nếu model có trường paid_at thì bỏ comment dòng dưới
+        # from django.utils import timezone
+        # booking.paid_at = timezone.now()
         booking.save()
-        messages.success(request, "Thanh toán thành công!")
+        messages.success(request, "Thanh toán thành công! Chúc bạn xem phim vui vẻ.")
     return redirect('booking_success', booking_id=booking.id)
 
 
-def movie_detail(request, movie_id):
-    movie = get_object_or_404(Movie, pk=movie_id)
-    reviews = movie.reviews.all()
-    form = ReviewForm(request.POST or None)
-    if request.method == 'POST' and form.is_valid() and request.user.is_authenticated:
-        rv = form.save(commit=False)
-        rv.movie = movie
-        rv.user = request.user
-        rv.save()
-        return redirect('movie_detail', movie_id=movie_id)
-    return render(request, 'movies/movie_detail.html', {'movie': movie, 'reviews': reviews, 'form': form})
-
-
+# --- Auth Views ---
 def register_view(request):
     form = SignUpForm(request.POST or None)
     if request.method == 'POST' and form.is_valid():
         user = form.save()
         login(request, user)
+        messages.success(request, f"Chào mừng {user.username} đến với Cinema Pro!")
         return redirect('movie_list')
     return render(request, 'movies/register.html', {'form': form})
 
@@ -113,8 +140,8 @@ def login_view(request):
     form = AuthenticationForm(data=request.POST or None)
     if request.method == 'POST' and form.is_valid():
         login(request, form.get_user())
-        if 'next' in request.POST: return redirect(request.POST.get('next'))
-        return redirect('movie_list')
+        next_url = request.POST.get('next') or 'movie_list'
+        return redirect(next_url)
     return render(request, 'movies/login.html', {'form': form})
 
 
@@ -128,6 +155,7 @@ def profile_view(request):
     form = UserUpdateForm(request.POST or None, instance=request.user)
     if request.method == 'POST' and form.is_valid():
         form.save()
+        messages.success(request, "Cập nhật thông tin thành công!")
     return render(request, 'movies/profile.html', {'form': form})
 
 

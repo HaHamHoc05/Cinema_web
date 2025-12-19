@@ -85,7 +85,7 @@
                     ĐẶT VÉ NGAY
                 </button>
             {% else %}
-                <a href="{% url 'login' %}?next={{ request.path }}" class="btn btn-warning w-100 btn-lg mt-3 fw-bold">Đăng nhập để đặt vé</a>
+                <a href="{% url 'login' %}" class="btn btn-warning w-100 btn-lg mt-3 fw-bold">Đăng nhập để đặt vé</a>
             {% endif %}
         </div>
     </div>
@@ -147,8 +147,11 @@
         const seatListEl = document.getElementById('seat-list');
         const btnSubmit = document.getElementById('btn-submit');
 
-        // Giá gốc từ server
-        const basePrice = {{ showtime.base_price }};
+        // SỬA LỖI: Dùng chuỗi rồi ép kiểu số để tránh lỗi cú pháp Javascript
+        // Ví dụ: server trả về 50000 -> js nhận chuỗi "50000" -> parse thành số 50000
+        const basePrice = parseInt("{{ showtime.base_price|stringformat:'d' }}");
+
+        console.log("Base price loaded:", basePrice); // Kiểm tra ở Console (F12) xem giá có đúng không
 
         function updateSummary() {
             let total = 0;
@@ -169,7 +172,9 @@
             });
 
             // Cập nhật giao diện
-            totalPriceEl.textContent = total.toLocaleString('vi-VN') + ' đ';
+            if (totalPriceEl) {
+                totalPriceEl.textContent = total.toLocaleString('vi-VN') + ' đ';
+            }
 
             if (selectedSeats.length > 0) {
                 seatListEl.textContent = selectedSeats.join(', ');
@@ -181,6 +186,7 @@
             }
         }
 
+        // Gán sự kiện click
         checkboxes.forEach(cb => cb.addEventListener('change', updateSummary));
     });
 </script>

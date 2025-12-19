@@ -2,61 +2,162 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Cinema Pro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cinema Pro - Trải nghiệm điện ảnh đỉnh cao</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
 
     <style>
-        /* Ép màu chữ trắng sáng */
-        body { background-color: #141414 !important; color: #ffffff !important; font-family: sans-serif; }
-        h1, h2, h3, h4, h5, h6, p, span, li, a, div { color: #ffffff; }
-        .text-muted { color: #bbb !important; }
-
-        .navbar { background: #000 !important; border-bottom: 1px solid #333; }
-        .dropdown-menu { background: #222; border: 1px solid #444; }
-        .dropdown-item { color: #fff; }
-        .dropdown-item:hover { background: #e50914; }
-
-        /* Box gợi ý tìm kiếm */
-        #search-results {
-            position: absolute; top: 100%; left: 0; width: 100%;
-            background: #222; border: 1px solid #555; z-index: 999; display: none;
+        :root {
+            --primary-red: #e50914;
+            --dark-bg: #141414;
+            --glass: rgba(255, 255, 255, 0.1);
         }
-        .suggestion-item { padding: 10px; display: block; color: white !important; text-decoration: none; border-bottom: 1px solid #333; }
-        .suggestion-item:hover { background: #e50914; }
+        body {
+            background-color: var(--dark-bg);
+            color: #fff;
+            font-family: 'Montserrat', sans-serif;
+            min-height: 100vh;
+            display: flex; flex-direction: column;
+        }
+        a { text-decoration: none; transition: 0.3s; }
+
+        /* Navbar */
+        .navbar {
+            background: linear-gradient(to bottom, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0) 100%);
+            padding: 1rem 0;
+            position: fixed; top: 0; width: 100%; z-index: 1000;
+            transition: background 0.3s;
+        }
+        .navbar.scrolled { background: #000; box-shadow: 0 2px 10px rgba(0,0,0,0.5); }
+        .navbar-brand { font-size: 1.8rem; letter-spacing: 2px; text-shadow: 0 0 10px rgba(229, 9, 20, 0.7); }
+
+        /* Footer */
+        footer { margin-top: auto; background: #000; padding: 2rem 0; border-top: 1px solid #333; }
+
+        /* Utilities */
+        .text-primary-red { color: var(--primary-red) !important; }
+        .btn-primary-red {
+            background-color: var(--primary-red); color: white; border: none;
+            padding: 0.6rem 1.5rem; border-radius: 4px; font-weight: 600;
+        }
+        .btn-primary-red:hover { background-color: #b20710; color: white; transform: scale(1.05); }
+
+        /* Search Box */
+        .search-container { position: relative; }
+        #search-results {
+            position: absolute; top: 100%; width: 100%;
+            background: #1a1a1a; border: 1px solid #333;
+            border-radius: 0 0 8px 8px; display: none; overflow: hidden;
+        }
+        .suggestion-item {
+            display: flex; align-items: center; padding: 10px;
+            color: #ddd; border-bottom: 1px solid #333;
+        }
+        .suggestion-item:hover { background: #333; color: white; }
+        .suggestion-poster { width: 40px; height: 60px; object-fit: cover; margin-right: 10px; border-radius: 3px; }
     </style>
+    {% block extra_css %}{% endblock %}
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark">
+    <nav class="navbar navbar-expand-lg navbar-dark" id="mainNav">
         <div class="container">
             <a class="navbar-brand fw-bold text-danger" href="{% url 'movie_list' %}">CINEMA PRO</a>
-            <div class="mx-auto position-relative" style="width: 100%; max-width: 400px;">
-                <form action="{% url 'movie_list' %}" method="GET">
-                    <input type="text" id="search-input" name="q" class="form-control bg-dark text-white border-secondary" placeholder="Tìm phim..." autocomplete="off">
-                </form>
-                <div id="search-results"></div>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navContent">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navContent">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item"><a class="nav-link active" href="{% url 'movie_list' %}">Phim Đang Chiếu</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#">Lịch Chiếu</a></li>
+                </ul>
+
+                <div class="d-flex align-items-center gap-3">
+                    <div class="search-container d-none d-md-block" style="width: 300px;">
+                        <input type="text" id="search-input" class="form-control bg-dark text-white border-secondary" placeholder="Tìm tên phim, đạo diễn..." autocomplete="off">
+                        <div id="search-results"></div>
+                    </div>
+
+                    {% if user.is_authenticated %}
+                        <div class="dropdown">
+                            <a class="text-white d-flex align-items-center cursor-pointer" href="#" data-bs-toggle="dropdown">
+                                <img src="https://ui-avatars.com/api/?name={{ user.username }}&background=E50914&color=fff" class="rounded-circle me-2" width="35">
+                                <span class="fw-bold">{{ user.username }}</span>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark shadow-lg border-secondary">
+                                <li><a class="dropdown-item" href="{% url 'profile' %}"><i class="fas fa-user me-2"></i>Hồ sơ</a></li>
+                                <li><a class="dropdown-item" href="{% url 'my_tickets' %}"><i class="fas fa-ticket-alt me-2"></i>Vé của tôi</a></li>
+                                <li><hr class="dropdown-divider border-secondary"></li>
+                                <li><a class="dropdown-item text-danger" href="{% url 'logout' %}"><i class="fas fa-sign-out-alt me-2"></i>Đăng xuất</a></li>
+                            </ul>
+                        </div>
+                    {% else %}
+                        <a href="{% url 'login' %}" class="btn btn-outline-light btn-sm fw-bold">Đăng nhập</a>
+                        <a href="{% url 'register' %}" class="btn btn-primary-red btn-sm">Đăng ký</a>
+                    {% endif %}
+                </div>
             </div>
-            <ul class="navbar-nav ms-auto">
-                {% if user.is_authenticated %}
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle text-white fw-bold" href="#" data-bs-toggle="dropdown">Chào {{ user.username }}</a>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="{% url 'my_tickets' %}">Vé của tôi</a></li>
-                            <li><a class="dropdown-item" href="{% url 'logout' %}">Đăng xuất</a></li>
-                        </ul>
-                    </li>
-                {% else %}
-                    <li class="nav-item"><a class="nav-link text-white" href="{% url 'login' %}">Đăng nhập</a></li>
-                {% endif %}
-            </ul>
         </div>
     </nav>
 
-    <div class="container mt-4">{% block content %}{% endblock %}</div>
+    <div style="height: 80px;"></div>
+
+    <div class="container mt-3">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    <i class="fas fa-info-circle me-2"></i> {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    </div>
+    <div class="main-content flex-grow-1">
+        {% block content %}{% endblock %}
+    </div>
+
+    <footer class="text-center text-muted">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4 mb-3 text-start">
+                    <h5 class="text-white fw-bold">CINEMA PRO</h5>
+                    <p class="small">Trải nghiệm điện ảnh tốt nhất với hệ thống rạp hiện đại và âm thanh sống động.</p>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <h6 class="text-white text-uppercase">Liên kết</h6>
+                    <ul class="list-unstyled small">
+                        <li><a href="#" class="text-muted">Về chúng tôi</a></li>
+                        <li><a href="#" class="text-muted">Điều khoản sử dụng</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <h6 class="text-white text-uppercase">Liên hệ</h6>
+                    <div class="d-flex justify-content-center justify-content-md-start gap-3 mt-2">
+                        <a href="#" class="text-white"><i class="fab fa-facebook fa-lg"></i></a>
+                        <a href="#" class="text-white"><i class="fab fa-instagram fa-lg"></i></a>
+                        <a href="#" class="text-white"><i class="fab fa-youtube fa-lg"></i></a>
+                    </div>
+                </div>
+            </div>
+            <hr class="border-secondary">
+            <p class="mb-0 small">&copy; 2025 Cinema Pro. All rights reserved.</p>
+        </div>
+    </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Script tìm kiếm gợi ý
+        // Navbar scroll effect
+        window.addEventListener('scroll', function() {
+            if (window.scrollY > 50) {
+                document.getElementById('mainNav').classList.add('scrolled');
+            } else {
+                document.getElementById('mainNav').classList.remove('scrolled');
+            }
+        });
+
+        // Search logic
         const searchInp = document.getElementById('search-input');
         const resultsBox = document.getElementById('search-results');
         let timer;
@@ -66,10 +167,16 @@
                 const val = this.value;
                 if(val.length < 2) { resultsBox.style.display='none'; return; }
                 timer = setTimeout(() => {
-                    fetch(`/movies/api/search-suggestions/?term=${val}`)
+                    fetch(`/api/search-suggestions/?term=${val}`)
                     .then(r=>r.json()).then(data=>{
                         if(data.length){
-                            resultsBox.innerHTML = data.map(m=>`<a href="/movie/${m.id}/" class="suggestion-item">${m.title}</a>`).join('');
+                            resultsBox.innerHTML = data.map(m=>`
+                                <a href="/movie/${m.id}/" class="suggestion-item">
+                                    <img src="${m.poster}" class="suggestion-poster">
+                                    <div>
+                                        <div class="fw-bold">${m.title}</div>
+                                    </div>
+                                </a>`).join('');
                             resultsBox.style.display='block';
                         } else resultsBox.style.display='none';
                     });

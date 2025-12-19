@@ -2,135 +2,60 @@
 
 {% block extra_css %}
 <style>
-    .screen-display {
-        height: 60px; background: linear-gradient(to bottom, #fff, transparent);
-        opacity: 0.3; transform: perspective(500px) rotateX(-10deg);
-        margin-bottom: 30px; width: 80%; margin-left: auto; margin-right: auto;
+    .movie-card {
+        transition: transform 0.3s, box-shadow 0.3s;
+        height: 100%; position: relative; overflow: hidden; border-radius: 8px;
     }
-    .seat-cb { display: none; }
-    .seat-lbl {
-        width: 40px; height: 40px; margin: 3px; background: #333;
-        border-radius: 6px; cursor: pointer; display: flex;
-        align-items: center; justify-content: center; font-size: 12px;
-        color: #aaa; transition: 0.2s; border-bottom: 2px solid #222;
+    .movie-card:hover { transform: scale(1.05); z-index: 10; box-shadow: 0 10px 20px rgba(0,0,0,0.8); }
+    .movie-poster { width: 100%; aspect-ratio: 2/3; object-fit: cover; }
+    .movie-overlay {
+        position: absolute; bottom: 0; left: 0; width: 100%;
+        background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
+        padding: 20px; opacity: 1; transition: 0.3s;
     }
-    .seat-lbl.vip { border: 1px solid #ffc107; color: #ffc107; }
-    .seat-lbl.couple { background: #9c27b0; color: #fff; width: 50px; }
-    .seat-lbl.occupied { background: #111; color: #333; cursor: not-allowed; border: none; }
-
-    .seat-cb:checked + .seat-lbl {
-        background: #e50914 !important; color: white !important;
-        transform: scale(1.1); border-color: #e50914 !important;
-    }
+    .badge-rating { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.7); color: #ffc107; padding: 5px 10px; border-radius: 4px; font-weight: bold; border: 1px solid #ffc107; }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-md-4 mb-4">
-        <div class="card bg-dark border-secondary p-4 sticky-top" style="top: 100px;">
-            <img src="{{ showtime.movie.poster.url }}" class="img-fluid rounded mb-3" style="max-height: 200px; object-fit: cover;">
-            <h3 class="text-danger fw-bold">{{ showtime.movie.title }}</h3>
-            <p class="mb-1 text-white"><i class="fas fa-map-marker-alt me-2"></i>{{ showtime.screen.cinema.name }}</p>
-            <p class="mb-1 text-white"><i class="fas fa-tv me-2"></i>Phòng: {{ showtime.screen.name }}</p>
-            <p class="mb-3 text-warning fw-bold fs-5"><i class="far fa-clock me-2"></i>{{ showtime.start_time|date:"H:i - d/m/Y" }}</p>
-
-            <hr class="border-secondary">
-
-            <div class="d-flex justify-content-between mb-2">
-                <span class="text-muted">Ghế chọn:</span>
-                <span id="seat-names" class="fw-bold text-white text-end">...</span>
-            </div>
-            <div class="d-flex justify-content-between mb-4">
-                <span class="text-muted">Tạm tính:</span>
-                <span id="total-price" class="fw-bold text-danger fs-4">0 đ</span>
-            </div>
-
-            {% if user.is_authenticated %}
-                <button type="submit" form="booking-form" id="btn-pay" class="btn btn-danger w-100 py-3 fw-bold shadow" disabled>
-                    XÁC NHẬN ĐẶT VÉ
-                </button>
-            {% else %}
-                <a href="{% url 'login' %}?next={{ request.path }}" class="btn btn-warning w-100">
-                    Đăng nhập để đặt vé
-                </a>
-            {% endif %}
+<div class="container py-4">
+    <div class="p-5 mb-5 rounded-3" style="background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('https://w.wallhaven.cc/full/wq/wallhaven-wqve6r.jpg') center/cover; min-height: 400px; display: flex; align-items: center;">
+        <div class="container-fluid py-5 text-white">
+            <h1 class="display-4 fw-bold">Thế Giới Điện Ảnh</h1>
+            <p class="col-md-8 fs-4">Đặt vé trực tuyến nhanh chóng, tiện lợi với hàng ngàn ưu đãi hấp dẫn.</p>
+            <a href="#movie-grid" class="btn btn-primary-red btn-lg mt-3">Đặt vé ngay</a>
         </div>
     </div>
 
-    <div class="col-md-8">
-        <div class="card bg-dark border-secondary p-4">
-            <div class="text-center mb-4">
-                <div class="screen-display"></div>
-                <small class="text-muted">MÀN HÌNH CHIẾU</small>
-            </div>
+    <div class="d-flex justify-content-between align-items-center mb-4" id="movie-grid">
+        <h3 class="text-uppercase border-start border-4 border-danger ps-3 fw-bold m-0">Phim Đang Chiếu</h3>
+    </div>
 
-            <form id="booking-form" method="POST" action="{% url 'book_tickets' showtime.id %}">
-                {% csrf_token %}
-                <div class="d-flex flex-column align-items-center overflow-auto">
-                    {% regroup all_seats by row as seat_rows %}
-                    {% for row in seat_rows %}
-                    <div class="d-flex align-items-center mb-2">
-                        <span class="me-3 text-muted fw-bold" style="width: 20px;">{{ row.grouper }}</span>
-                        {% for seat in row.list %}
-                            {% if seat.id in occupied_seats %}
-                                <div class="seat-lbl occupied">{{ seat.number }}</div>
-                            {% else %}
-                                <input type="checkbox" name="selected_seats" value="{{ seat.id }}"
-                                       id="s-{{ seat.id }}" class="seat-cb"
-                                       data-name="{{ row.grouper }}{{ seat.number }}"
-                                       data-type="{{ seat.seat_type }}">
-                                <label for="s-{{ seat.id }}" class="seat-lbl {{ seat.seat_type|lower }}">
-                                    {{ seat.number }}
-                                </label>
-                            {% endif %}
-                        {% endfor %}
+    <div class="row row-cols-2 row-cols-md-4 row-cols-lg-5 g-4">
+        {% for movie in movies %}
+        <div class="col">
+            <a href="{% url 'movie_detail' movie.id %}">
+                <div class="movie-card bg-dark border border-secondary">
+                    <span class="badge-rating"><i class="fas fa-star me-1"></i>{{ movie.rating }}</span>
+                    {% if movie.poster %}
+                        <img src="{{ movie.poster.url }}" class="movie-poster" alt="{{ movie.title }}">
+                    {% else %}
+                        <div class="movie-poster bg-secondary d-flex align-items-center justify-content-center text-muted">
+                            <i class="fas fa-film fa-2x"></i>
+                        </div>
+                    {% endif %}
+                    <div class="movie-overlay">
+                        <h6 class="text-white fw-bold mb-1 text-truncate">{{ movie.title }}</h6>
+                        <small class="text-muted">{{ movie.duration }} phút</small>
                     </div>
-                    {% endfor %}
                 </div>
-            </form>
-
-            <div class="d-flex justify-content-center gap-4 mt-5 flex-wrap">
-                <div class="d-flex align-items-center"><span class="seat-lbl me-2" style="cursor: default;"></span> Thường</div>
-                <div class="d-flex align-items-center"><span class="seat-lbl vip me-2" style="cursor: default;"></span> VIP</div>
-                <div class="d-flex align-items-center"><span class="seat-lbl couple me-2" style="cursor: default;"></span> Đôi</div>
-                <div class="d-flex align-items-center"><span class="seat-lbl occupied me-2" style="cursor: default;"></span> Đã bán</div>
-            </div>
+            </a>
         </div>
+        {% empty %}
+        <div class="col-12 text-center py-5">
+            <p class="text-muted fs-5">Chưa có phim nào đang chiếu.</p>
+        </div>
+        {% endfor %}
     </div>
 </div>
-{% endblock %}
-
-{% block extra_js %}
-<script>
-    document.addEventListener('DOMContentLoaded', function(){
-        const cbs = document.querySelectorAll('.seat-cb');
-        const priceEl = document.getElementById('total-price');
-        const nameEl = document.getElementById('seat-names');
-        const btn = document.getElementById('btn-pay');
-        const base = {{ showtime.base_price|stringformat:"d" }};
-
-        function update(){
-            let total=0; let names=[];
-            cbs.forEach(cb=>{
-                if(cb.checked){
-                    let p = base;
-                    if(cb.dataset.type=='VIP') p+=10000;
-                    if(cb.dataset.type=='COUPLE') p+=20000;
-                    total+=p;
-                    names.push(cb.dataset.name);
-                }
-            });
-            priceEl.innerText = total.toLocaleString('vi')+' đ';
-            if(names.length){
-                nameEl.innerText = names.join(', ');
-                if(btn) btn.disabled=false;
-            } else {
-                nameEl.innerText = '...';
-                if(btn) btn.disabled=true;
-            }
-        }
-        cbs.forEach(cb=>cb.addEventListener('change', update));
-    });
-</script>
 {% endblock %}

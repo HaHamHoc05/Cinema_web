@@ -1,92 +1,103 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="row g-5">
-    <div class="col-md-4">
-        <div class="card border-0 shadow-lg" style="transform: rotate(-2deg);">
-            {% if movie.poster %}
-                <img src="{{ movie.poster.url }}" class="card-img-top rounded" alt="{{ movie.title }}">
-            {% else %}
-                <div class="bg-secondary text-white d-flex align-items-center justify-content-center" style="height: 400px;">
-                    <i class="fas fa-film fa-3x"></i>
+<div style="position: relative;">
+    <div style="background: url('{{ movie.poster.url }}') no-repeat center center; background-size: cover; height: 500px; opacity: 0.4; position: absolute; width: 100%; top: 0; filter: blur(2px);"></div>
+    <div style="background: linear-gradient(to bottom, rgba(20,20,20,0.3), rgba(20,20,20,1)); position: absolute; width: 100%; height: 500px; top: 0;"></div>
+
+    <div class="container py-5" style="position: relative; z-index: 1;">
+        <div class="row g-5">
+            <div class="col-md-3">
+                <div class="card border-0 shadow-lg" style="transform: rotate(-2deg); border: 4px solid #fff;">
+                    {% if movie.poster %}
+                        <img src="{{ movie.poster.url }}" class="card-img-top" alt="{{ movie.title }}">
+                    {% endif %}
                 </div>
-            {% endif %}
-        </div>
-    </div>
-
-    <div class="col-md-8">
-        <h1 class="display-4 fw-bold text-danger mb-2">{{ movie.title }}</h1>
-
-        <div class="mb-4 text-muted fs-5">
-            <span class="me-3"><i class="far fa-clock text-danger"></i> {{ movie.duration }} phút</span>
-            <span class="me-3"><i class="far fa-calendar-alt text-danger"></i> {{ movie.release_date|date:"d/m/Y" }}</span>
-            <span><i class="fas fa-star text-warning"></i> {{ movie.rating }}</span>
-        </div>
-
-        <p class="lead text-light opacity-75">{{ movie.description }}</p>
-
-        <div class="row mt-4 text-light">
-            <div class="col-md-6"><strong>Đạo diễn:</strong> <span class="text-muted">{{ movie.director }}</span></div>
-            <div class="col-md-6"><strong>Diễn viên:</strong> <span class="text-muted">{{ movie.cast }}</span></div>
-        </div>
-
-        <h3 class="mt-5 border-bottom border-secondary pb-2 mb-3 text-uppercase">
-            <i class="fas fa-calendar-check text-danger me-2"></i>Lịch Chiếu
-        </h3>
-
-        <div class="d-flex flex-wrap gap-2">
-             {% for showtime in movie.showtimes.all %}
-                {% if showtime.is_available %}
-                <a href="{% url 'showtime_detail' showtime.id %}" class="btn btn-outline-light py-2 px-3 text-center border-secondary" style="min-width: 100px;">
-                    <div class="fw-bold text-danger fs-5">{{ showtime.start_time|date:"H:i" }}</div>
-                    <small class="text-muted">{{ showtime.start_time|date:"d/m" }}</small>
-                    <div class="small text-secondary" style="font-size: 0.7rem;">{{ showtime.screen.cinema.name }}</div>
-                </a>
-                {% endif %}
-             {% empty %}
-                <p class="text-muted fst-italic">Hiện chưa có lịch chiếu cho phim này.</p>
-             {% endfor %}
-        </div>
-    </div>
-</div>
-
-<div class="row mt-5 pt-5">
-    <div class="col-lg-8 mx-auto">
-        <div class="card bg-dark border border-secondary">
-            <div class="card-header bg-transparent border-secondary py-3">
-                <h4 class="mb-0"><i class="fas fa-comments me-2 text-danger"></i>Bình Luận</h4>
             </div>
-            <div class="card-body p-4">
-                {% if user.is_authenticated %}
-                    <form method="POST" class="mb-4">
-                        {% csrf_token %}
-                        <div class="mb-2">
-                            <label class="small text-muted">Đánh giá:</label>
-                            {{ form.rating }}
-                        </div>
-                        <div class="mb-2">
-                            {{ form.comment }}
-                        </div>
-                        <button class="btn btn-danger btn-sm">Gửi</button>
-                    </form>
-                {% else %}
-                    <div class="alert alert-dark text-center">
-                        <a href="{% url 'login' %}?next={{ request.path }}" class="text-danger fw-bold">Đăng nhập</a> để bình luận.
-                    </div>
-                {% endif %}
 
-                {% for review in reviews %}
-                    <div class="border-bottom border-secondary pb-3 mb-3">
-                        <div class="d-flex justify-content-between">
-                            <strong class="text-danger">{{ review.user.username }}</strong>
-                            <span class="text-warning">{{ review.rating }} <i class="fas fa-star"></i></span>
-                        </div>
-                        <p class="text-light mb-0 mt-1">{{ review.comment }}</p>
-                        <small class="text-muted">{{ review.created_at|timesince }} trước</small>
+            <div class="col-md-9">
+                <h1 class="display-3 fw-bold text-white mb-2" style="text-shadow: 2px 2px 4px rgba(0,0,0,0.8);">{{ movie.title }}</h1>
+                <div class="mb-4 text-light">
+                    <span class="badge bg-danger me-2">{{ movie.get_rating_display }}</span>
+                    <span class="me-3"><i class="far fa-clock text-danger"></i> {{ movie.duration }} phút</span>
+                    <span class="me-3"><i class="far fa-calendar-alt text-danger"></i> {{ movie.release_date|date:"d/m/Y" }}</span>
+                </div>
+
+                <p class="lead text-light opacity-100" style="text-align: justify; text-shadow: 1px 1px 2px rgba(0,0,0,0.8);">{{ movie.description }}</p>
+
+                <div class="row mt-4 text-light bg-dark bg-opacity-75 p-3 rounded border border-secondary shadow">
+                    <div class="col-md-6"><strong><i class="fas fa-video me-2 text-danger"></i>Đạo diễn:</strong> <span class="text-white">{{ movie.director }}</span></div>
+                    <div class="col-md-6"><strong><i class="fas fa-user-friends me-2 text-danger"></i>Diễn viên:</strong> <span class="text-white">{{ movie.cast }}</span></div>
+                    <div class="col-md-6 mt-2"><strong><i class="fas fa-globe me-2 text-danger"></i>Quốc gia:</strong> <span class="text-white">{{ movie.country }}</span></div>
+                </div>
+
+                <h3 class="mt-5 border-bottom border-danger pb-2 mb-4 text-uppercase fw-bold">
+                    <i class="fas fa-ticket-alt text-danger me-2"></i>Lịch Chiếu
+                </h3>
+
+                <div class="d-flex flex-wrap gap-3">
+                     {% for showtime in showtimes %}
+                        <a href="{% url 'showtime_detail' showtime.id %}" class="btn btn-outline-light py-2 px-4 text-center border-secondary position-relative overflow-hidden group-hover">
+                            <div class="fw-bold text-danger fs-5">{{ showtime.start_time|date:"H:i" }}</div>
+                            <small class="text-muted">{{ showtime.start_time|date:"d/m" }}</small>
+                            <div class="small text-white opacity-50 mt-1" style="font-size: 0.7rem;">{{ showtime.screen.name }} - {{ showtime.screen.get_screen_type_display }}</div>
+                        </a>
+                     {% empty %}
+                        <p class="text-muted fst-italic">Hiện chưa có lịch chiếu cho phim này.</p>
+                     {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-5">
+            <div class="col-lg-8">
+                <div class="card bg-dark border border-secondary">
+                    <div class="card-header bg-transparent border-secondary py-3 d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0 text-white"><i class="fas fa-comments me-2 text-danger"></i>Đánh giá từ khán giả</h4>
                     </div>
-                {% empty %}
-                    <p class="text-muted text-center">Chưa có đánh giá nào.</p>
-                {% endfor %}
+                    <div class="card-body p-4">
+                        {% if user.is_authenticated %}
+                            <form method="POST" class="mb-5 position-relative">
+                                {% csrf_token %}
+                                <div class="d-flex align-items-center mb-2">
+                                    <img src="https://ui-avatars.com/api/?name={{ user.username }}" class="rounded-circle me-2" width="40">
+                                    <div class="flex-grow-1">
+                                        {{ form.comment }}
+                                    </div>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center mt-2">
+                                    <div class="d-flex align-items-center text-white">
+                                        <span class="me-2">Điểm:</span>
+                                        {{ form.rating }}
+                                    </div>
+                                    <button class="btn btn-primary-red btn-sm px-4">Gửi đánh giá</button>
+                                </div>
+                            </form>
+                        {% else %}
+                            <div class="alert alert-dark text-center border-secondary mb-4">
+                                <a href="{% url 'login' %}?next={{ request.path }}" class="text-danger fw-bold">Đăng nhập</a> để viết bình luận.
+                            </div>
+                        {% endif %}
+
+                        <div class="review-list">
+                            {% for review in reviews %}
+                                <div class="border-bottom border-secondary pb-3 mb-3">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div class="d-flex align-items-center">
+                                            <img src="https://ui-avatars.com/api/?name={{ review.user.username }}&background=random" class="rounded-circle me-2" width="30">
+                                            <strong class="text-white me-2">{{ review.user.username }}</strong>
+                                            <small class="text-muted">{{ review.created_at|timesince }} trước</small>
+                                        </div>
+                                        <span class="text-warning fw-bold">{{ review.rating }}/5 <i class="fas fa-star"></i></span>
+                                    </div>
+                                    <p class="text-light mb-0 mt-2 ps-5">{{ review.comment }}</p>
+                                </div>
+                            {% empty %}
+                                <p class="text-muted text-center py-3">Chưa có đánh giá nào.</p>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
