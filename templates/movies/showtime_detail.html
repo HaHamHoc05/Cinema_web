@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+<style>
+    /* CSS cho màn hình chiếu */
+    .screen-display {
+        background: #fff;
+        height: 10px;
+        width: 80%;
+        margin: 0 auto 30px;
+        box-shadow: 0 10px 30px rgba(255, 255, 255, 0.4);
+        border-radius: 5px;
+    }
+    
+    /* CSS cho ghế ngồi */
+    .seat-checkbox {
+        display: none; /* Ẩn checkbox mặc định */
+    }
+    
+    .seat-label {
+        width: 35px;
+        height: 35px;
+        border-radius: 8px;
+        background-color: #444;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 10px;
+        margin: 3px;
+        transition: all 0.2s;
+        color: #fff;
+    }
+    
+    /* Khi rê chuột vào ghế */
+    .seat-label:hover {
+        background-color: #e50914; 
+        transform: scale(1.1);
+    }
+    
+    /* Khi ghế được chọn (checkbox checked) */
+    .seat-checkbox:checked + .seat-label {
+        background-color: #e50914;
+        box-shadow: 0 0 10px #e50914;
+    }
+    
+    /* Ghế đã có người đặt (Disabled) */
+    .seat-label.occupied {
+        background-color: #2c2c2c;
+        color: #555;
+        cursor: not-allowed;
+        border: 1px solid #444;
+    }
+    
+    .seat-row {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-bottom: 5px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-4">
+        <div class="card bg-dark border border-secondary mb-4">
+            <div class="card-body">
+                <img src="{{ showtime.movie.poster.url }}" class="img-fluid rounded mb-3" alt="">
+                <h3 class="text-danger">{{ showtime.movie.title }}</h3>
+                <hr>
+                <p><strong>Rạp:</strong> {{ showtime.screen.cinema.name }}</p>
+                <p><strong>Phòng:</strong> {{ showtime.screen.name }}</p>
+                <p><strong>Suất chiếu:</strong> {{ showtime.start_time|date:"H:i d/m/Y" }}</p>
+                <p><strong>Giá vé cơ bản:</strong> {{ showtime.base_price|floatformat:0 }}đ</p>
+            </div>
+        </div>
+        
+        <div class="card bg-danger text-white">
+            <div class="card-body text-center">
+                <h5>TỔNG TIỀN</h5>
+                <h2 id="total-price">0 đ</h2>
+                <p id="seat-count">0 ghế đã chọn</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-8">
+        <h3 class="text-center mb-4">CHỌN GHẾ</h3>
+        
+        <div class="text-center text-muted mb-2">MÀN HÌNH</div>
+        <div class="screen-display"></div>
+
+        <form method="POST" action="{% url 'book_tickets' showtime.id %}" id="booking-form">
+            {% csrf_token %}
+            
+            <div class="d-flex flex-column align-items-center overflow-auto">
+                {% regroup all_seats by row as seat_rows %}
+                
+                {% for row in seat_rows %}
+                <div class="seat-row">
+                    <span class="me-3 fw-bold text-muted" style="width: 20px;">{{ row.grouper }}</span>
+                    
+                    {% for seat in row.list %}
+                        {% if seat.id in occupied_seats %}
+                            <label class="seat-label occupied">
+                                {{ seat.number }}
+                            </label>
+                        {% else %}
+                            <input type="checkbox" 
+                                   name="selected_seats" 
+                                   value="{{ seat.id }}" 
+                                   id="seat-{{ seat.id }}" 
+                                   class="seat-checkbox"
+                                   data-price="{{ showtime.base_price }}">
+                            <label for="seat-{{ seat.id }}" class="seat-label">
+                                {{ seat.number }}
+                            </label>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="d-flex justify-content-center mt-4 gap-4">
+                <div class="d-flex align-items-center">
+                    <div class="seat-label me-2" style="cursor: default;"></div> Trống
+                </div>
+                <div class="d-flex align-items-center">
+                    <div class="seat-label me-2 occupied" style="cursor: default;"></div> Đã đặt
+                </div>
+                <div class="d-flex align-items-center">
+                    <div class="seat-label me-2" style="background-color: #e50914; cursor: default;"></div> Đang chọn
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-danger w-100 btn-lg mt-4 fw-bold">
+                XÁC NHẬN ĐẶT VÉ
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Script tính tổng tiền ngay lập tức khi khách bấm chọn ghế
+    document.addEventListener('DOMContentLoaded', function() {
+        const checkboxes = document.querySelectorAll('.seat-checkbox');
+        const totalPriceEl = document.getElementById('total-price');
+        const seatCountEl = document.getElementById('seat-count');
+        
+        function updateSummary() {
+            let total = 0;
+            let count = 0;
+            
+            checkboxes.forEach(cb => {
+                if (cb.checked) {
+                    // Lấy giá vé từ data-price (convert sang số thực)
+                    total += parseFloat(cb.dataset.price);
+                    count++;
+                }
+            });
+            
+            // Format tiền tệ Việt Nam (VD: 100.000 đ)
+            totalPriceEl.textContent = total.toLocaleString('vi-VN') + ' đ';
+            seatCountEl.textContent = count + ' ghế đã chọn';
+        }
+
+        // Gắn sự kiện click cho tất cả checkbox
+        checkboxes.forEach(cb => {
+            cb.addEventListener('change', updateSummary);
+        });
+    });
+</script>
+{% endblock %}
