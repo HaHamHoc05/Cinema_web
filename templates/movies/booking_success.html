@@ -2,82 +2,194 @@
 
 {% block extra_css %}
 <style>
-    .ticket-stub {
-        background: #fff; color: #222; border-radius: 16px; overflow: hidden;
-        position: relative; max-width: 600px; margin: 0 auto;
-        box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+    .ticket-container {
+        max-width: 800px;
+        margin: 0 auto;
+        background-color: #1f1f1f;
+        border-radius: 16px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        overflow: hidden;
+        position: relative;
     }
-    .ticket-dotted-line {
-        border-bottom: 3px dashed #ddd; position: relative; margin: 25px 0;
+
+    /* Hiệu ứng đường xé vé (Dashed line) */
+    .ticket-divider {
+        position: relative;
+        height: 2px;
+        background-image: linear-gradient(to right, #333 50%, transparent 50%);
+        background-size: 20px 100%;
+        margin: 30px 0;
     }
-    .ticket-dotted-line::before, .ticket-dotted-line::after {
-        content: ''; position: absolute; bottom: -12px; width: 24px; height: 24px;
-        background-color: var(--dark-bg); border-radius: 50%;
+    .ticket-divider::before, .ticket-divider::after {
+        content: '';
+        position: absolute;
+        width: 30px; height: 30px;
+        background-color: #141414; /* Màu nền body */
+        border-radius: 50%;
+        top: -14px;
     }
-    .ticket-dotted-line::before { left: -12px; }
-    .ticket-dotted-line::after { right: -12px; }
+    .ticket-divider::before { left: -15px; }
+    .ticket-divider::after { right: -15px; }
+
+    .movie-poster-sm {
+        width: 100px; height: 150px; object-fit: cover; border-radius: 8px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    }
+
+    .info-label { color: #888; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+    .info-value { color: #fff; font-weight: bold; font-size: 1.1rem; }
+
+    .seat-badge {
+        display: inline-block;
+        background-color: #333; color: #fff;
+        padding: 5px 12px; border-radius: 4px;
+        font-weight: bold; margin-right: 5px; margin-bottom: 5px;
+        border: 1px solid #555;
+    }
+
+    .concession-row {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 8px 0; border-bottom: 1px solid #333;
+    }
+    .concession-row:last-child { border-bottom: none; }
+
+    .status-badge {
+        padding: 8px 16px; border-radius: 20px; font-weight: bold; font-size: 0.9rem;
+    }
+    .status-paid { background-color: rgba(25, 135, 84, 0.2); color: #198754; border: 1px solid #198754; }
+    .status-pending { background-color: rgba(255, 193, 7, 0.2); color: #ffc107; border: 1px solid #ffc107; }
+
+    .qr-placeholder {
+        background: white; padding: 10px; border-radius: 8px; display: inline-block;
+    }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="py-5 text-center">
-    <div class="mb-4">
-        <div class="text-success mb-2" style="font-size: 4rem;"><i class="fas fa-check-circle"></i></div>
-        <h2 class="text-white fw-bold">ĐẶT VÉ THÀNH CÔNG!</h2>
-        <p class="text-white">Mã vé đã được tạo. Vui lòng thanh toán để hoàn tất.</p>
+<div class="container py-5">
+
+    <div class="text-center mb-5">
+        {% if booking.status == 'PAID' %}
+            <div class="mb-3"><i class="fas fa-check-circle fa-4x text-success"></i></div>
+            <h2 class="fw-bold text-white">ĐẶT VÉ THÀNH CÔNG!</h2>
+            <p class="text-muted">Cảm ơn bạn đã sử dụng dịch vụ. Dưới đây là vé điện tử của bạn.</p>
+        {% else %}
+            <div class="mb-3"><i class="fas fa-clock fa-4x text-warning"></i></div>
+            <h2 class="fw-bold text-white">ĐANG CHỜ THANH TOÁN</h2>
+            <p class="text-muted">Vui lòng thanh toán để hoàn tất đặt vé. Vé sẽ được giữ trong 15 phút.</p>
+        {% endif %}
     </div>
 
-    <div class="ticket-stub text-start">
-        <div class="p-4 bg-danger text-white">
-            <h4 class="fw-bold mb-1">{{ booking.showtime.movie.title }}</h4>
-            <div class="opacity-75 small">
-                <i class="fas fa-map-marker-alt me-1"></i> {{ booking.showtime.screen.cinema.name }} &bull; {{ booking.showtime.screen.name }}
-            </div>
-        </div>
-
-        <div class="p-4">
-            <div class="row mb-3">
-                <div class="col-6">
-                    <small class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem;">Suất chiếu</small>
-                    <div class="fs-5 fw-bold">{{ booking.showtime.start_time|date:"H:i" }}</div>
-                    <small class="text-muted">{{ booking.showtime.start_time|date:"d/m/Y" }}</small>
+    <div class="ticket-container">
+        <div class="p-4 p-md-5">
+            <div class="row align-items-center">
+                <div class="col-md-3 text-center text-md-start mb-3 mb-md-0">
+                    <img src="{{ booking.showtime.movie.poster.url }}" class="movie-poster-sm">
                 </div>
-                <div class="col-6 text-end">
-                    <small class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem;">Ghế</small>
-                    <div class="fs-5 fw-bold text-danger">
-                        {% for ticket in booking.tickets.all %}
-                            {{ ticket.seat.row }}{{ ticket.seat.number }}{% if not forloop.last %}, {% endif %}
-                        {% endfor %}
+                <div class="col-md-9">
+                    <h3 class="fw-bold text-white mb-2 text-uppercase">{{ booking.showtime.movie.title }}</h3>
+                    <div class="row mt-3 g-3">
+                        <div class="col-6 col-md-4">
+                            <div class="info-label">Rạp Chiếu</div>
+                            <div class="info-value">{{ booking.showtime.screen.cinema.name }}</div>
+                        </div>
+                        <div class="col-6 col-md-4">
+                            <div class="info-label">Phòng Chiếu</div>
+                            <div class="info-value">{{ booking.showtime.screen.name }}</div>
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <div class="info-label">Suất Chiếu</div>
+                            <div class="info-value text-danger">
+                                {{ booking.showtime.start_time|date:"H:i" }} - {{ booking.showtime.start_time|date:"d/m/Y" }}
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-
-            <div class="ticket-dotted-line"></div>
-
-            <div class="row align-items-center">
-                <div class="col-7">
-                    <small class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem;">Mã đặt vé</small>
-                    <h2 class="fw-bold text-dark ls-2 mb-0">{{ booking.booking_code }}</h2>
-                </div>
-                <div class="col-5 text-end">
-                    <small class="text-muted d-block">Tổng tiền</small>
-                    <span class="fs-4 fw-bold text-danger">{{ booking.total_amount|floatformat:0 }} đ</span>
-                </div>
-            </div>
         </div>
 
-        <div class="p-3 bg-light border-top d-grid gap-2">
-            {% if booking.status == 'PENDING' %}
-                <a href="{% url 'pay_booking' booking.id %}" class="btn btn-success btn-lg fw-bold shadow-sm py-3">
-                    <i class="fas fa-credit-card me-2"></i>THANH TOÁN NGAY
-                </a>
-            {% endif %}
+        <div class="ticket-divider"></div>
 
-            <div class="d-flex gap-2">
-                <a href="{% url 'movie_list' %}" class="btn btn-outline-dark w-50 fw-bold">Trang chủ</a>
-                <a href="{% url 'my_tickets' %}" class="btn btn-outline-danger w-50 fw-bold">Ví vé</a>
+        <div class="p-4 p-md-5 pt-0">
+            <div class="row">
+                <div class="col-lg-8 border-end border-secondary pe-lg-5">
+
+                    <div class="mb-4">
+                        <div class="info-label mb-2"><i class="fas fa-couch me-2"></i>Ghế ngồi</div>
+                        <div>
+                            {% for ticket in booking.tickets.all %}
+                                <span class="seat-badge">
+                                    {{ ticket.seat.row }}{{ ticket.seat.number }}
+                                    <small class="text-muted ms-1" style="font-size: 0.7em">({{ ticket.seat.get_seat_type_display }})</small>
+                                </span>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    {% if booking.concessions.all %}
+                    <div class="mb-4">
+                        <div class="info-label mb-2"><i class="fas fa-popcorn me-2"></i>Combo & Bắp nước</div>
+                        <div class="bg-dark p-3 rounded border border-secondary">
+                            {% for item in booking.concessions.all %}
+                                <div class="concession-row">
+                                    <span class="text-white">
+                                        <span class="fw-bold text-warning me-2">{{ item.quantity }}x</span>
+                                        {{ item.concession.name }}
+                                    </span>
+                                    <span class="text-light">{{ item.concession.price|floatformat:0 }} đ</span>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="col-lg-4 ps-lg-5 mt-4 mt-lg-0 d-flex flex-column justify-content-between">
+                    <div>
+                        <div class="info-label">Mã Đặt Vé</div>
+                        <div class="info-value fs-4 letter-spacing-2 mb-3">{{ booking.booking_code }}</div>
+
+                        <div class="qr-placeholder mb-3">
+                            <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data={{ booking.booking_code }}" width="100%">
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="text-muted">Tổng tiền</span>
+                            <span class="fs-4 fw-bold text-danger">{{ booking.total_amount|floatformat:0 }} đ</span>
+                        </div>
+
+                        <div class="text-center mt-2">
+                            {% if booking.status == 'PENDING' %}
+                                <span class="status-badge status-pending">CHỜ THANH TOÁN</span>
+                            {% elif booking.status == 'PAID' %}
+                                <span class="status-badge status-paid">ĐÃ THANH TOÁN</span>
+                            {% else %}
+                                <span class="badge bg-secondary">{{ booking.get_status_display }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
+
+    <div class="text-center mt-5 d-flex justify-content-center gap-3">
+        <a href="{% url 'movie_list' %}" class="btn btn-outline-light px-4">
+            <i class="fas fa-home me-2"></i>Về Trang Chủ
+        </a>
+
+        {% if booking.status == 'PENDING' %}
+            <a href="{% url 'pay_booking' booking.id %}" class="btn btn-danger px-5 fw-bold shadow">
+                <i class="fas fa-credit-card me-2"></i>THANH TOÁN NGAY
+            </a>
+        {% else %}
+            <a href="{% url 'my_tickets' %}" class="btn btn-primary-red px-4">
+                <i class="fas fa-ticket-alt me-2"></i>Vé Của Tôi
+            </a>
+        {% endif %}
+    </div>
+
 </div>
 {% endblock %}

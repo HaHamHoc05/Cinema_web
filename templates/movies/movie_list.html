@@ -2,18 +2,42 @@
 
 {% block extra_css %}
 <style>
+    /* CSS cho Card Phim */
     .movie-card {
-        transition: transform 0.3s, box-shadow 0.3s;
+        transition: all 0.3s ease;
         height: 100%; position: relative; overflow: hidden; border-radius: 8px;
+        background: #1a1a1a;
     }
-    .movie-card:hover { transform: scale(1.05); z-index: 10; box-shadow: 0 10px 20px rgba(0,0,0,0.8); }
-    .movie-poster { width: 100%; aspect-ratio: 2/3; object-fit: cover; }
+    .movie-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(229, 9, 20, 0.4);
+        border-color: var(--primary-red) !important;
+    }
+    .movie-poster { width: 100%; aspect-ratio: 2/3; object-fit: cover; transition: 0.3s; }
+    .movie-card:hover .movie-poster { opacity: 0.3; transform: scale(1.05); }
+
+    /* Overlay nút đặt vé khi hover */
     .movie-overlay {
-        position: absolute; bottom: 0; left: 0; width: 100%;
-        background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
-        padding: 20px; opacity: 1; transition: 0.3s;
+        position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+        display: flex; flex-direction: column; justify-content: center; align-items: center;
+        opacity: 0; transition: 0.3s;
     }
-    .badge-rating { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.7); color: #ffc107; padding: 5px 10px; border-radius: 4px; font-weight: bold; border: 1px solid #ffc107; }
+    .movie-card:hover .movie-overlay { opacity: 1; }
+
+    .badge-rating { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.8); color: #ffc107; padding: 5px 10px; border-radius: 4px; font-weight: bold; border: 1px solid #ffc107; z-index: 5; }
+
+    /* Style cho Tabs */
+    .nav-tabs { border-bottom: 2px solid #333; }
+    .nav-tabs .nav-link {
+        color: #888; border: none; font-size: 1.2rem; font-weight: bold; padding: 10px 20px;
+        background: transparent; text-transform: uppercase;
+    }
+    .nav-tabs .nav-link:hover { color: #fff; }
+    .nav-tabs .nav-link.active {
+        color: var(--primary-red) !important;
+        background: transparent;
+        border-bottom: 3px solid var(--primary-red);
+    }
 </style>
 {% endblock %}
 
@@ -21,41 +45,89 @@
 <div class="container py-4">
     <div class="p-5 mb-5 rounded-3" style="background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('https://w.wallhaven.cc/full/wq/wallhaven-wqve6r.jpg') center/cover; min-height: 400px; display: flex; align-items: center;">
         <div class="container-fluid py-5 text-white">
-            <h1 class="display-4 fw-bold">Thế Giới Điện Ảnh</h1>
-            <p class="col-md-8 fs-4">Đặt vé trực tuyến nhanh chóng, tiện lợi với hàng ngàn ưu đãi hấp dẫn.</p>
-            <a href="#movie-grid" class="btn btn-primary-red btn-lg mt-3">Đặt vé ngay</a>
+            <h1 class="display-4 fw-bold text-shadow">Thế Giới Điện Ảnh</h1>
+            <p class="col-md-8 fs-4 text-shadow">Đặt vé trực tuyến nhanh chóng, tiện lợi với hàng ngàn ưu đãi hấp dẫn.</p>
         </div>
     </div>
 
-    <div class="d-flex justify-content-between align-items-center mb-4" id="movie-grid">
-        <h3 class="text-uppercase border-start border-4 border-danger ps-3 fw-bold m-0">Phim Đang Chiếu</h3>
-    </div>
+    <ul class="nav nav-tabs justify-content-center mb-5" id="movieTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="now-tab" data-bs-toggle="tab" data-bs-target="#now" type="button" role="tab">
+                Phim Đang Chiếu
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="upcoming-tab" data-bs-toggle="tab" data-bs-target="#upcoming" type="button" role="tab">
+                Phim Sắp Chiếu
+            </button>
+        </li>
+    </ul>
 
-    <div class="row row-cols-2 row-cols-md-4 row-cols-lg-5 g-4">
-        {% for movie in movies %}
-        <div class="col">
-            <a href="{% url 'movie_detail' movie.id %}">
-                <div class="movie-card bg-dark border border-secondary">
-                    <span class="badge-rating"><i class="fas fa-star me-1"></i>{{ movie.rating }}</span>
-                    {% if movie.poster %}
-                        <img src="{{ movie.poster.url }}" class="movie-poster" alt="{{ movie.title }}">
-                    {% else %}
-                        <div class="movie-poster bg-secondary d-flex align-items-center justify-content-center text-muted">
-                            <i class="fas fa-film fa-2x"></i>
+    <div class="tab-content" id="movieTabsContent">
+
+        <div class="tab-pane fade show active" id="now" role="tabpanel">
+            <div class="row row-cols-2 row-cols-md-4 row-cols-lg-5 g-4">
+                {% for movie in movies_now %}
+                <div class="col">
+                    <div class="movie-card border border-secondary">
+                        <span class="badge-rating"><i class="fas fa-star me-1"></i>{{ movie.rating }}</span>
+                        {% if movie.poster %}
+                            <img src="{{ movie.poster.url }}" class="movie-poster" alt="{{ movie.title }}">
+                        {% endif %}
+
+                        <div class="p-3 bg-dark">
+                            <h6 class="text-white fw-bold mb-1 text-truncate">{{ movie.title }}</h6>
+                            <small class="text-muted d-block mb-2">{{ movie.duration }} phút</small>
                         </div>
-                    {% endif %}
-                    <div class="movie-overlay">
-                        <h6 class="text-white fw-bold mb-1 text-truncate">{{ movie.title }}</h6>
-                        <small class="text-muted">{{ movie.duration }} phút</small>
+
+                        <div class="movie-overlay">
+                            <a href="{% url 'movie_detail' movie.id %}" class="btn btn-danger fw-bold rounded-pill px-4 shadow">
+                                <i class="fas fa-ticket-alt me-2"></i>MUA VÉ
+                            </a>
+                        </div>
                     </div>
                 </div>
-            </a>
+                {% empty %}
+                <div class="col-12 text-center py-5">
+                    <p class="text-muted fs-5">Không tìm thấy phim đang chiếu nào.</p>
+                </div>
+                {% endfor %}
+            </div>
         </div>
-        {% empty %}
-        <div class="col-12 text-center py-5">
-            <p class="text-muted fs-5">Chưa có phim nào đang chiếu.</p>
+
+        <div class="tab-pane fade" id="upcoming" role="tabpanel">
+            <div class="row row-cols-2 row-cols-md-4 row-cols-lg-5 g-4">
+                {% for movie in movies_upcoming %}
+                <div class="col">
+                    <div class="movie-card border border-secondary">
+                        <span class="badge bg-success position-absolute top-0 start-0 m-2 z-2">Sắp chiếu</span>
+
+                        {% if movie.poster %}
+                            <img src="{{ movie.poster.url }}" class="movie-poster" alt="{{ movie.title }}">
+                        {% endif %}
+
+                        <div class="p-3 bg-dark">
+                            <h6 class="text-white fw-bold mb-1 text-truncate">{{ movie.title }}</h6>
+                            <small class="text-danger fw-bold d-block mb-2">
+                                <i class="far fa-calendar-alt me-1"></i>{{ movie.release_date|date:"d/m/Y" }}
+                            </small>
+                        </div>
+
+                        <div class="movie-overlay">
+                            <a href="{% url 'movie_detail' movie.id %}" class="btn btn-outline-light fw-bold rounded-pill px-4">
+                                <i class="fas fa-info-circle me-2"></i>CHI TIẾT
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col-12 text-center py-5">
+                    <p class="text-muted fs-5">Chưa có phim sắp chiếu.</p>
+                </div>
+                {% endfor %}
+            </div>
         </div>
-        {% endfor %}
+
     </div>
 </div>
 {% endblock %}

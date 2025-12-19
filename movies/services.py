@@ -2,7 +2,7 @@ from django.db import transaction
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from datetime import timedelta
-from .models import Booking, Ticket, Seat, Showtime, TicketPrice
+from .models import Booking, Ticket, Seat, Showtime, TicketPrice, Concession, BookingConcession
 import uuid
 
 
@@ -15,7 +15,7 @@ def get_occupied_seats(showtime_id):
 
 
 @transaction.atomic
-def create_booking(user, showtime_id, seat_ids):
+def create_booking(user, showtime_id, seat_ids, concession_data=None):
     # 1. Lấy suất chiếu và khóa dòng (nếu DB hỗ trợ)
     try:
         showtime = Showtime.objects.select_for_update().get(id=showtime_id)
@@ -61,7 +61,20 @@ def create_booking(user, showtime_id, seat_ids):
 
         total_amount += price
         Ticket.objects.create(booking=booking, seat=seat, price=price)
-
+    if concession_data:
+        # Lấy tất cả combo có trong danh sách đặt để lấy giá
+        concessions = Concession.objects.filter(id__in=concession_data.keys())
+        for item in concessions:
+            quantity = concession_data.get(item.id)
+            if quantity > 0:
+                # Cộng tiền
+                total_amount += item.price * quantity
+                # Tạo chi tiết combo
+                BookingConcession.objects.create(
+                    booking=booking,
+                    concession=item,
+                    quantity=quantity
+                )
     booking.total_amount = total_amount
     booking.save()
 

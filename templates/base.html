@@ -57,6 +57,12 @@
         }
         .suggestion-item:hover { background: #333; color: white; }
         .suggestion-poster { width: 40px; height: 60px; object-fit: cover; margin-right: 10px; border-radius: 3px; }
+
+        /* Dropdown Menu Dark */
+        .dropdown-menu-dark { background-color: #1f1f1f; border: 1px solid #333; }
+        .dropdown-item { color: #ccc; }
+        .dropdown-item:hover { background-color: #333; color: #fff; }
+        .dropdown-divider { border-color: #333; }
     </style>
     {% block extra_css %}{% endblock %}
 </head>
@@ -72,7 +78,7 @@
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                     <li class="nav-item"><a class="nav-link active" href="{% url 'movie_list' %}">Phim Đang Chiếu</a></li>
                     <li class="nav-item"><a class="nav-link" href="#">Lịch Chiếu</a></li>
-                </ul>
+                    </ul>
 
                 <div class="d-flex align-items-center gap-3">
                     <div class="search-container d-none d-md-block" style="width: 300px;">
@@ -87,6 +93,13 @@
                                 <span class="fw-bold">{{ user.username }}</span>
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark shadow-lg border-secondary">
+
+                                {% if user.is_staff %}
+                                    <li><h6 class="dropdown-header text-uppercase text-danger small fw-bold">Quản trị viên</h6></li>
+                                    <li><a class="dropdown-item text-warning" href="{% url 'admin_stats' %}"><i class="fas fa-chart-line me-2"></i>Báo cáo Doanh thu</a></li>
+                                    <li><a class="dropdown-item text-info" href="/admin/"><i class="fas fa-cogs me-2"></i>Trang Admin</a></li>
+                                    <li><hr class="dropdown-divider border-secondary"></li>
+                                {% endif %}
                                 <li><a class="dropdown-item" href="{% url 'profile' %}"><i class="fas fa-user me-2"></i>Hồ sơ</a></li>
                                 <li><a class="dropdown-item" href="{% url 'my_tickets' %}"><i class="fas fa-ticket-alt me-2"></i>Vé của tôi</a></li>
                                 <li><hr class="dropdown-divider border-secondary"></li>
@@ -109,16 +122,17 @@
             {% for message in messages %}
                 <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
                     <i class="fas fa-info-circle me-2"></i> {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
             {% endfor %}
         {% endif %}
     </div>
+
     <div class="main-content flex-grow-1">
         {% block content %}{% endblock %}
     </div>
 
-    <footer class="text-center text-white">
+    <footer class="text-center text-muted">
         <div class="container">
             <div class="row">
                 <div class="col-md-4 mb-3 text-start">
@@ -128,8 +142,8 @@
                 <div class="col-md-4 mb-3">
                     <h6 class="text-white text-uppercase">Liên kết</h6>
                     <ul class="list-unstyled small">
-                        <li><a href="#" class="text-white">Về chúng tôi</a></li>
-                        <li><a href="#" class="text-white">Điều khoản sử dụng</a></li>
+                        <li><a href="#" class="text-muted">Về chúng tôi</a></li>
+                        <li><a href="#" class="text-muted">Điều khoản sử dụng</a></li>
                     </ul>
                 </div>
                 <div class="col-md-4 mb-3">

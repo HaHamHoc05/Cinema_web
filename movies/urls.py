@@ -16,4 +16,6 @@ urlpatterns = [
 
     # Đường dẫn cho tìm kiếm gợi ý
     path('api/search-suggestions/', views.search_suggestions, name='search_suggestions'),
+
+    path('admin-stats/', views.admin_statistics, name='admin_stats'),
 ]

@@ -5,6 +5,7 @@ from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator, MaxValueValidator
 
 from django.utils import timezone
+from django.utils.text import slugify
 
 
 # Model Thể loại phim
@@ -44,7 +45,7 @@ class Movie(models.Model):
 
     title = models.CharField(max_length=200, verbose_name="Tên phim")
 
-    slug = models.SlugField(max_length=200, unique=True)
+    slug = models.SlugField(max_length=200, unique=True, blank=True)
 
     description = models.TextField(verbose_name="Mô tả")
 
@@ -83,8 +84,16 @@ class Movie(models.Model):
 
         ordering = ['-release_date']
 
-    def __str__(self):
-        return self.title
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            base_slug = slugify(self.title)
+            slug = base_slug
+            i = 1
+            while Movie.objects.filter(slug=slug).exists():
+                slug = f"{base_slug}-{i}"
+                i += 1
+            self.slug = slug
+        super().save(*args, **kwargs)
 
 
 # Model Rạp chiếu phim

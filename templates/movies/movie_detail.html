@@ -39,7 +39,7 @@
                      {% for showtime in showtimes %}
                         <a href="{% url 'showtime_detail' showtime.id %}" class="btn btn-outline-light py-2 px-4 text-center border-secondary position-relative overflow-hidden group-hover">
                             <div class="fw-bold text-danger fs-5">{{ showtime.start_time|date:"H:i" }}</div>
-                            <small class="text-muted">{{ showtime.start_time|date:"d/m" }}</small>
+                            <small class="text-white">{{ showtime.start_time|date:"d/m" }}</small>
                             <div class="small text-white opacity-50 mt-1" style="font-size: 0.7rem;">{{ showtime.screen.name }} - {{ showtime.screen.get_screen_type_display }}</div>
                         </a>
                      {% empty %}

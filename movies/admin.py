@@ -75,7 +75,6 @@ class ScreenAdmin(admin.ModelAdmin):
 
 # ... (Giữ nguyên các phần đăng ký model khác bên dưới) ...
 admin.site.register(Genre)
-admin.site.register(Movie)
 admin.site.register(Cinema)
 
 
@@ -89,9 +88,34 @@ class SeatAdmin(admin.ModelAdmin):
 
 admin.site.register(Showtime)
 admin.site.register(TicketPrice)
-admin.site.register(Booking)
 admin.site.register(Ticket)
 admin.site.register(SeatReservation)
 admin.site.register(Review)
-admin.site.register(Concession)
 admin.site.register(BookingConcession)
+
+@admin.register(Concession)
+class ConcessionAdmin(admin.ModelAdmin):
+    list_display = ('name', 'price')
+    search_fields = ('name',)
+
+# Cho phép xem combo đã đặt trong chi tiết đơn hàng
+class BookingConcessionInline(admin.TabularInline):
+    model = BookingConcession
+    extra = 0
+
+@admin.register(Booking)
+class BookingAdmin(admin.ModelAdmin):
+    list_display = ('booking_code', 'user', 'showtime', 'total_amount', 'status', 'created_at')
+    list_filter = ('status', 'showtime__movie')
+    search_fields = ('booking_code', 'user__username')
+    inlines = [BookingConcessionInline] # Thêm dòng này để xem combo trong đơn hàng
+
+
+@admin.register(Movie)
+class MovieAdmin(admin.ModelAdmin):
+    list_display = ('title', 'release_date', 'duration', 'is_active')
+    search_fields = ('title', 'director')
+    list_filter = ('is_active', 'genres')
+
+    # THÊM DÒNG NÀY ĐỂ TỰ ĐỘNG SLUG
+    prepopulated_fields = {'slug': ('title',)}
