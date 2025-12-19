@@ -9,39 +9,19 @@
         border: 1px solid #333;
         transition: transform 0.3s;
     }
-    .ticket-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 20px rgba(0,0,0,0.5);
-        border-color: #555;
-    }
+    .ticket-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.5); border-color: #555; }
     .ticket-left {
-        width: 120px;
-        background-color: #000;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-right: 2px dashed #444;
-        position: relative;
+        width: 120px; background-color: #000;
+        display: flex; align-items: center; justify-content: center;
+        border-right: 2px dashed #444; position: relative;
     }
-    /* Vết cắt tròn trang trí */
     .ticket-left::before, .ticket-left::after {
-        content: '';
-        position: absolute;
-        width: 20px;
-        height: 20px;
-        background-color: var(--dark-bg);
-        border-radius: 50%;
-        right: -10px;
+        content: ''; position: absolute; width: 20px; height: 20px; background-color: var(--dark-bg);
+        border-radius: 50%; right: -10px;
     }
     .ticket-left::before { top: -10px; }
     .ticket-left::after { bottom: -10px; }
-
-    .poster-thumb {
-        width: 80px;
-        height: 120px;
-        object-fit: cover;
-        border-radius: 4px;
-    }
+    .poster-thumb { width: 80px; height: 120px; object-fit: cover; border-radius: 4px; }
 </style>
 {% endblock %}
 
@@ -80,21 +60,28 @@
                                 <span class="mx-2">|</span>
                                 <i class="far fa-clock me-1"></i> {{ booking.showtime.start_time|date:"H:i - d/m/Y" }}
                             </div>
-                        </div>
-
-                        <div class="d-flex justify-content-between align-items-end mt-3 border-top border-secondary pt-2">
-                            <div>
-                                <small class="text-muted d-block">Ghế:</small>
-                                <span class="fw-bold text-danger">
+                             <div class="small text-muted mt-1">
+                                <strong>Ghế:</strong>
+                                <span class="text-danger">
                                     {% for ticket in booking.tickets.all %}
                                         {{ ticket.seat.row }}{{ ticket.seat.number }}
                                     {% endfor %}
                                 </span>
                             </div>
-                            <div class="text-end">
-                                <small class="text-muted d-block">Tổng tiền:</small>
-                                <span class="fw-bold text-white fs-5">{{ booking.total_amount|floatformat:0 }} đ</span>
-                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center mt-3 border-top border-secondary pt-2">
+                             <span class="fw-bold text-white fs-5">{{ booking.total_amount|floatformat:0 }} đ</span>
+
+                             {% if booking.status == 'PENDING' %}
+                                <a href="{% url 'pay_booking' booking.id %}" class="btn btn-sm btn-success fw-bold">
+                                    <i class="fas fa-credit-card me-1"></i> THANH TOÁN
+                                </a>
+                             {% elif booking.status == 'PAID' %}
+                                <a href="{% url 'booking_success' booking.id %}" class="btn btn-sm btn-outline-light">
+                                    <i class="fas fa-qrcode"></i> Mã vé
+                                </a>
+                             {% endif %}
                         </div>
                     </div>
                 </div>
@@ -103,9 +90,8 @@
         </div>
     {% else %}
         <div class="text-center py-5">
-            <div class="opacity-50 mb-3"><i class="fas fa-ticket-alt fa-5x"></i></div>
             <h4 class="text-muted">Bạn chưa có vé nào.</h4>
-            <a href="{% url 'movie_list' %}" class="btn btn-outline-danger mt-3 rounded-pill px-4">Đặt vé ngay</a>
+            <a href="{% url 'movie_list' %}" class="btn btn-outline-danger mt-3">Đặt vé ngay</a>
         </div>
     {% endif %}
 </div>

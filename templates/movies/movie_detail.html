@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row g-5">
+    <div class="col-md-4">
+        <div class="card border-0 shadow-lg" style="transform: rotate(-2deg);">
+            {% if movie.poster %}
+                <img src="{{ movie.poster.url }}" class="card-img-top rounded" alt="{{ movie.title }}">
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="col-md-8">
+        <h1 class="display-4 fw-bold text-danger mb-2">{{ movie.title }}</h1>
+        <div class="mb-4 text-muted">
+            <span class="me-3"><i class="far fa-clock text-danger"></i> {{ movie.duration }} phút</span>
+            <span class="me-3"><i class="far fa-calendar-alt text-danger"></i> {{ movie.release_date|date:"d/m/Y" }}</span>
+            <span><i class="fas fa-globe text-danger"></i> {{ movie.country }}</span>
+        </div>
+
+        <div class="mb-4">
+            {% for genre in movie.genres.all %}
+                <span class="badge bg-secondary border border-light me-1">{{ genre.name }}</span>
+            {% endfor %}
+            <span class="badge bg-danger ms-2">{{ movie.rating }}</span>
+        </div>
+
+        <p class="lead text-light opacity-75">{{ movie.description }}</p>
+        
+        <div class="row mt-4 text-light">
+            <div class="col-md-6"><strong>Đạo diễn:</strong> <span class="text-muted">{{ movie.director }}</span></div>
+            <div class="col-md-6"><strong>Diễn viên:</strong> <span class="text-muted">{{ movie.cast }}</span></div>
+        </div>
+
+        {% if movie.trailer_url %}
+            <a href="{{ movie.trailer_url }}" target="_blank" class="btn btn-outline-light btn-lg mt-4 rounded-pill px-4">
+                <i class="fab fa-youtube text-danger me-2"></i>Xem Trailer
+            </a>
+        {% endif %}
+        
+        <h3 class="mt-5 border-bottom border-secondary pb-2 mb-3">Lịch Chiếu</h3>
+        <div class="d-flex flex-wrap gap-2">
+             {% for showtime in movie.showtimes.all %}
+                {% if showtime.is_available %}
+                <a href="{% url 'showtime_detail' showtime.id %}" class="btn btn-dark border border-secondary text-white py-2 px-3 text-center">
+                    <div class="fw-bold text-danger">{{ showtime.start_time|date:"H:i" }}</div>
+                    <small class="text-muted">{{ showtime.start_time|date:"d/m" }}</small>
+                </a>
+                {% endif %}
+             {% empty %}
+                <p class="text-muted">Chưa có lịch chiếu.</p>
+             {% endfor %}
+        </div>
+    </div>
+</div>
+
+<div class="row mt-5 pt-5">
+    <div class="col-lg-8 mx-auto">
+        <div class="card bg-dark border border-secondary">
+            <div class="card-header bg-transparent border-secondary py-3">
+                <h4 class="mb-0"><i class="fas fa-comments me-2 text-danger"></i>Đánh Giá Từ Khán Giả</h4>
+            </div>
+            <div class="card-body p-4">
+                {% if user.is_authenticated %}
+                    <form method="POST" class="mb-5 bg-black p-3 rounded border border-secondary">
+                        {% csrf_token %}
+                        <h6 class="text-white mb-3">Viết cảm nhận của bạn:</h6>
+                        <div class="mb-3">
+                            <label class="form-label text-muted small">Điểm số (1-5):</label>
+                            {{ form.rating }}
+                        </div>
+                        <div class="mb-3">{{ form.comment }}</div>
+                        <button type="submit" class="btn btn-danger btn-sm px-4">Gửi Đánh Giá</button>
+                    </form>
+                {% else %}
+                    <div class="alert alert-dark text-center mb-4 border-secondary">
+                        <a href="{% url 'login' %}?next={{ request.path }}" class="text-danger fw-bold text-decoration-none">Đăng nhập</a> để viết bình luận.
+                    </div>
+                {% endif %}
+
+                {% for review in reviews %}
+                    <div class="d-flex mb-4 border-bottom border-secondary pb-3">
+                        <div class="flex-shrink-0">
+                            <div class="bg-danger text-white rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 45px; height: 45px;">
+                                {{ review.user.first_name|slice:":1" }}
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="fw-bold text-white mb-0">{{ review.user.last_name }} {{ review.user.first_name }} <span class="text-warning small ms-2">{{ review.rating }} <i class="fas fa-star"></i></span></h6>
+                            <small class="text-muted d-block mb-2">{{ review.created_at|timesince }} trước</small>
+                            <p class="text-light mb-0">{{ review.comment }}</p>
+                        </div>
+                    </div>
+                {% empty %}
+                    <div class="text-center text-muted py-3">Chưa có đánh giá nào.</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
