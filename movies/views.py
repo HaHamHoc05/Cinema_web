@@ -1,10 +1,13 @@
 from PIL.ImageChops import screen
+from django.contrib.auth import logout, login
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.forms import AuthenticationForm
 from django.shortcuts import render, get_object_or_404, redirect
 from django.views.decorators.http import require_POST
 from pyexpat.errors import messages
 
 from . import services
+from .form import SignUpForm
 from .models import Movie, Showtime, Seat, Booking
 
 
@@ -31,7 +34,7 @@ def showtime_detail(request, showtime_id):
     })
 
 # xu ly dat ve ( chi nhan req POST)
-@login_required(login_url='/admin/login/')
+@login_required(login_url='login')
 @require_POST # cho phe gui du lieu ngam, kh cho truc tiep
 def book_tickets(request, showtime_id):
     try:
@@ -57,3 +60,41 @@ def book_tickets(request, showtime_id):
 def booking_success(request, booking_id):
     booking = get_object_or_404(Booking, pk=booking_id, user=request.user)
     return render(request, 'movies/booking_success.html', {'booking': booking})
+
+def register_view(request):
+    if request.method == 'POST':
+        form = SignUpForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            login(request, user)  # Đăng ký xong tự động đăng nhập luôn
+            messages.success(request, "Đăng ký thành công!")
+            return redirect('movie_list')
+    else:
+        form = SignUpForm()
+    return render(request, 'movies/register.html', {'form': form})
+
+def login_view(request):
+    if request.method == 'POST':
+        form = AuthenticationForm(data=request.POST)
+        if form.is_valid():
+            user = form.get_user()
+            login(request, user)
+            # Nếu người dùng bị chuyển hướng từ trang đặt vé, quay lại đó
+            if 'next' in request.POST:
+                return redirect(request.POST.get('next'))
+            return redirect('movie_list')
+    else:
+        form = AuthenticationForm()
+    return render(request, 'movies/login.html', {'form': form})
+
+def logout_view(request):
+    logout(request)
+    return redirect('movie_list')
+
+
+@login_required(login_url='login')
+def my_tickets(request):
+    # Lấy danh sách booking của user hiện tại, sắp xếp mới nhất lên đầu
+    bookings = Booking.objects.filter(user=request.user).order_by('-created_at')
+
+    return render(request, 'movies/my_tickets.html', {'bookings': bookings})

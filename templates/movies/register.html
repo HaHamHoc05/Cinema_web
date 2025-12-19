@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+<style>
+    body {
+        background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.8)),
+                    url('https://assets.nflxext.com/ffe/siteui/vlv3/f841d4c7-10e1-40af-bcae-07a3f8dc141a/f6d7434e-d6de-4185-a6d4-c77a2d08737b/VN-vi-20220502-popsignuptwoweeks-perspective_alpha_website_medium.jpg');
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        min-height: 100vh;
+    }
+    .auth-card {
+        background-color: rgba(0, 0, 0, 0.75);
+        border-radius: 8px;
+        padding: 40px;
+        border: 1px solid #333;
+        backdrop-filter: blur(5px);
+        max-width: 500px; /* Form đăng ký rộng hơn chút */
+        margin: 0 auto;
+    }
+    .form-floating > .form-control {
+        background-color: #333;
+        border: none;
+        color: #fff;
+    }
+    .form-floating > .form-control:focus {
+        background-color: #444;
+        border-bottom: 2px solid #e50914;
+        box-shadow: none;
+    }
+    .form-floating > label { color: #8c8c8c; }
+    .btn-register {
+        background-color: #e50914;
+        font-weight: bold;
+        padding: 12px;
+        transition: 0.3s;
+    }
+    .btn-register:hover { background-color: #f40612; transform: scale(1.02); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center justify-content-center py-5">
+    <div class="auth-card w-100">
+        <h2 class="text-white mb-4 fw-bold">Đăng Ký</h2>
+
+        <form method="POST">
+            {% csrf_token %}
+
+            <div class="row g-2 mb-3">
+                <div class="col-md-6">
+                    <div class="form-floating">
+                        <input type="text" name="last_name" class="form-control" id="floatingLast" placeholder="Họ" required>
+                        <label for="floatingLast">Họ</label>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-floating">
+                        <input type="text" name="first_name" class="form-control" id="floatingFirst" placeholder="Tên" required>
+                        <label for="floatingFirst">Tên</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-floating mb-3">
+                <input type="text" name="username" class="form-control" id="floatingUser" placeholder="Tên đăng nhập" required>
+                <label for="floatingUser">Tên đăng nhập</label>
+                <div class="form-text text-muted small ps-1">Dùng để đăng nhập vào hệ thống.</div>
+            </div>
+
+            <div class="form-floating mb-3">
+                <input type="email" name="email" class="form-control" id="floatingEmail" placeholder="name@example.com" required>
+                <label for="floatingEmail">Email</label>
+                <div class="form-text text-muted small ps-1">Vé sẽ được gửi qua email này.</div>
+            </div>
+
+            {% for field in form %}
+                {% if field.name == 'password' or 'pass' in field.name %}
+                   {% endif %}
+            {% endfor %}
+
+            <div class="bg-dark p-3 rounded mb-3 border border-secondary">
+                <small class="text-muted d-block mb-2">Thiết lập mật khẩu:</small>
+                {% for field in form %}
+                    {% if field.html_name != 'username' and field.html_name != 'email' and field.html_name != 'first_name' and field.html_name != 'last_name' %}
+                        <div class="mb-2">
+                            {{ field.errors }}
+                            <input type="{{ field.field.widget.input_type }}"
+                                   name="{{ field.html_name }}"
+                                   class="form-control bg-secondary text-white border-0"
+                                   placeholder="{{ field.label }}">
+                            {% if field.help_text %}
+                                <small class="text-muted" style="font-size: 10px;">{{ field.help_text|safe }}</small>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+
+            <button type="submit" class="btn btn-register btn-danger w-100 rounded text-white mt-2">
+                Tạo Tài Khoản
+            </button>
+        </form>
+
+        <div class="mt-4 text-secondary text-center">
+            Đã có tài khoản? <a href="{% url 'login' %}" class="text-white text-decoration-none fw-bold">Đăng nhập</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

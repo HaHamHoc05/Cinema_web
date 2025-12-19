@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+<style>
+    /* CSS Riêng cho trang Auth */
+    body {
+        /* Ảnh nền rạp phim mờ tối */
+        background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.8)),
+                    url('https://assets.nflxext.com/ffe/siteui/vlv3/f841d4c7-10e1-40af-bcae-07a3f8dc141a/f6d7434e-d6de-4185-a6d4-c77a2d08737b/VN-vi-20220502-popsignuptwoweeks-perspective_alpha_website_medium.jpg');
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        height: 100vh;
+        overflow: hidden; /* Ẩn thanh cuộn thừa */
+    }
+
+    .auth-card {
+        background-color: rgba(0, 0, 0, 0.75); /* Màu đen trong suốt */
+        border-radius: 8px;
+        border: 1px solid #333;
+        padding: 40px;
+        box-shadow: 0 15px 25px rgba(0,0,0,0.6);
+        backdrop-filter: blur(5px); /* Hiệu ứng mờ nền sau lưng */
+        max-width: 450px;
+        margin: 0 auto;
+    }
+
+    /* Style lại ô input cho hợp màu tối */
+    .form-floating > .form-control {
+        background-color: #333;
+        border: none;
+        color: #fff;
+    }
+
+    .form-floating > .form-control:focus {
+        background-color: #444;
+        box-shadow: none;
+        border-bottom: 2px solid #e50914; /* Gạch chân đỏ khi nhập */
+    }
+
+    .form-floating > label {
+        color: #8c8c8c;
+    }
+
+    .btn-login {
+        background-color: #e50914;
+        font-weight: bold;
+        padding: 12px;
+        font-size: 16px;
+        transition: all 0.3s;
+    }
+
+    .btn-login:hover {
+        background-color: #f40612;
+        transform: scale(1.02);
+    }
+
+    .auth-footer {
+        color: #737373;
+        font-size: 14px;
+        margin-top:

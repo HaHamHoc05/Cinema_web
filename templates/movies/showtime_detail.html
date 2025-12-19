@@ -87,7 +87,8 @@
 
     <div class="col-md-8">
         <h3 class="text-center mb-4">CHỌN GHẾ</h3>
-        
+
+        {% if user.is_authenticated %}
         <div class="text-center text-muted mb-2">MÀN HÌNH</div>
         <div class="screen-display"></div>
 
@@ -138,6 +139,18 @@
                 XÁC NHẬN ĐẶT VÉ
             </button>
         </form>
+        {% else %}
+            <div class="alert alert-warning text-center" role="alert">
+                <i class="fas fa-lock fa-2x mb-3"></i><br>
+                Bạn cần đăng nhập để xem sơ đồ ghế và đặt vé.
+        </div>
+        <div class="d-grid gap-2 col-6 mx-auto">
+            <a href="{% url 'login' %}?next={{ request.path }}" class="btn btn-danger btn-lg">
+                <i class="fas fa-sign-in-alt"></i> ĐĂNG NHẬP NGAY
+            </a>
+            <a href="{% url 'register' %}" class="btn btn-outline-light">Chưa có tài khoản? Đăng ký</a>
+        </div>
+    {% endif %}
     </div>
 </div>
 {% endblock %}
