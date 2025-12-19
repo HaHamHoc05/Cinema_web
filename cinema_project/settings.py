@@ -126,3 +126,13 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+#
+# Cấu hình Email (In ra console để test)
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+EMAIL_HOST = 'localhost'
+EMAIL_PORT = 1025
+EMAIL_HOST_USER = ''
+EMAIL_HOST_PASSWORD = ''
+EMAIL_USE_TLS = False
+DEFAULT_FROM_EMAIL = 'Cinema Pro <booking@cinemapro.vn>'

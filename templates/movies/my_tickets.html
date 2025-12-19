@@ -1,51 +1,101 @@
 {% extends "base.html" %}
 
+{% block extra_css %}
+<style>
+    .ticket-card {
+        background: #222;
+        border-radius: 12px;
+        overflow: hidden;
+        border: 1px solid #333;
+        transition: transform 0.3s;
+    }
+    .ticket-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+        border-color: #555;
+    }
+    .ticket-left {
+        width: 120px;
+        background-color: #000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-right: 2px dashed #444;
+        position: relative;
+    }
+    /* Vết cắt tròn trang trí */
+    .ticket-left::before, .ticket-left::after {
+        content: '';
+        position: absolute;
+        width: 20px;
+        height: 20px;
+        background-color: var(--dark-bg);
+        border-radius: 50%;
+        right: -10px;
+    }
+    .ticket-left::before { top: -10px; }
+    .ticket-left::after { bottom: -10px; }
+
+    .poster-thumb {
+        width: 80px;
+        height: 120px;
+        object-fit: cover;
+        border-radius: 4px;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container">
-    <h2 class="mb-4 text-uppercase border-start border-4 border-danger ps-3">Vé Của Tôi</h2>
+    <h2 class="text-uppercase fw-bold mb-4 border-start border-4 border-danger ps-3">Ví Vé Của Tôi</h2>
 
     {% if bookings %}
-        <div class="row">
+        <div class="row g-4">
             {% for booking in bookings %}
-            <div class="col-md-6 mb-4">
-                <div class="card bg-dark text-white border-secondary h-100 shadow-sm">
-                    <div class="card-header d-flex justify-content-between align-items-center 
-                        {% if booking.status == 'PAID' %}bg-success
-                        {% elif booking.status == 'PENDING' %}bg-warning text-dark
-                        {% elif booking.status == 'CANCELLED' %}bg-danger
-                        {% else %}bg-secondary{% endif %}">
-                        
-                        <span class="fw-bold">
-                            <i class="fas fa-ticket-alt me-2"></i>{{ booking.booking_code }}
-                        </span>
-                        <span class="badge bg-light text-dark">{{ booking.get_status_display }}</span>
+            <div class="col-lg-6">
+                <div class="d-flex ticket-card h-100">
+                    <div class="ticket-left p-2">
+                        {% if booking.showtime.movie.poster %}
+                            <img src="{{ booking.showtime.movie.poster.url }}" class="poster-thumb" alt="">
+                        {% else %}
+                            <div class="poster-thumb bg-secondary"></div>
+                        {% endif %}
                     </div>
-                    
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-4">
-                                <img src="{{ booking.showtime.movie.poster.url }}" class="img-fluid rounded" alt="...">
+
+                    <div class="flex-grow-1 p-3 d-flex flex-column justify-content-between">
+                        <div>
+                            <div class="d-flex justify-content-between align-items-start">
+                                <h5 class="fw-bold text-white mb-1">{{ booking.showtime.movie.title }}</h5>
+                                {% if booking.status == 'PAID' %}
+                                    <span class="badge bg-success">Đã thanh toán</span>
+                                {% elif booking.status == 'PENDING' %}
+                                    <span class="badge bg-warning text-dark">Chờ thanh toán</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ booking.get_status_display }}</span>
+                                {% endif %}
                             </div>
-                            <div class="col-8">
-                                <h5 class="card-title text-danger">{{ booking.showtime.movie.title }}</h5>
-                                <p class="mb-1"><small><i class="fas fa-map-marker-alt"></i> {{ booking.showtime.screen.cinema.name }} - {{ booking.showtime.screen.name }}</small></p>
-                                <p class="mb-1"><small><i class="far fa-clock"></i> {{ booking.showtime.start_time|date:"H:i d/m/Y" }}</small></p>
-                                <hr class="border-secondary">
-                                <p class="mb-1">
-                                    <strong>Ghế:</strong> 
-                                    {% for ticket in booking.tickets.all %}
-                                        <span class="badge bg-secondary border border-light">{{ ticket.seat.row }}{{ ticket.seat.number }}</span>
-                                    {% endfor %}
-                                </p>
-                                <p class="mb-0 text-end fs-5 fw-bold text-warning">
-                                    {{ booking.total_amount|floatformat:0 }} đ
-                                </p>
+
+                            <div class="small text-muted mt-2">
+                                <i class="fas fa-map-marker-alt me-1"></i> {{ booking.showtime.screen.cinema.name }}
+                                <span class="mx-2">|</span>
+                                <i class="far fa-clock me-1"></i> {{ booking.showtime.start_time|date:"H:i - d/m/Y" }}
                             </div>
                         </div>
-                    </div>
-                    
-                    <div class="card-footer border-secondary text-muted small text-center">
-                        Đặt lúc: {{ booking.created_at|date:"H:i:s d/m/Y" }}
+
+                        <div class="d-flex justify-content-between align-items-end mt-3 border-top border-secondary pt-2">
+                            <div>
+                                <small class="text-muted d-block">Ghế:</small>
+                                <span class="fw-bold text-danger">
+                                    {% for ticket in booking.tickets.all %}
+                                        {{ ticket.seat.row }}{{ ticket.seat.number }}
+                                    {% endfor %}
+                                </span>
+                            </div>
+                            <div class="text-end">
+                                <small class="text-muted d-block">Tổng tiền:</small>
+                                <span class="fw-bold text-white fs-5">{{ booking.total_amount|floatformat:0 }} đ</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -53,11 +103,9 @@
         </div>
     {% else %}
         <div class="text-center py-5">
-            <div class="mb-3">
-                <i class="fas fa-film fa-4x text-muted"></i>
-            </div>
-            <h4 class="text-muted">Bạn chưa đặt vé nào cả.</h4>
-            <a href="{% url 'movie_list' %}" class="btn btn-danger mt-3">Đặt vé ngay</a>
+            <div class="opacity-50 mb-3"><i class="fas fa-ticket-alt fa-5x"></i></div>
+            <h4 class="text-muted">Bạn chưa có vé nào.</h4>
+            <a href="{% url 'movie_list' %}" class="btn btn-outline-danger mt-3 rounded-pill px-4">Đặt vé ngay</a>
         </div>
     {% endif %}
 </div>

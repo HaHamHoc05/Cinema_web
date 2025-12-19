@@ -2,12 +2,17 @@ from PIL.ImageChops import screen
 from django.contrib.auth import logout, login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
+from django.core.mail import send_mail
+from django.db.models import Q
 from django.shortcuts import render, get_object_or_404, redirect
+from django.template.loader import render_to_string
+from django.utils import timezone
+from django.utils.html import strip_tags
 from django.views.decorators.http import require_POST
 from pyexpat.errors import messages
 
 from . import services
-from .form import SignUpForm
+from .form import SignUpForm, UserUpdateForm, ReviewForm
 from .models import Movie, Showtime, Seat, Booking
 
 
@@ -98,3 +103,91 @@ def my_tickets(request):
     bookings = Booking.objects.filter(user=request.user).order_by('-created_at')
 
     return render(request, 'movies/my_tickets.html', {'bookings': bookings})
+
+
+def movie_list(request):
+    query = request.GET.get('q')
+    if query:
+        # Tìm theo tên phim hoặc tên đạo diễn
+        movies = Movie.objects.filter(
+            Q(title__icontains=query) | Q(director__icontains=query),
+            is_active=True
+        )
+    else:
+        movies = Movie.objects.filter(is_active=True)
+    return render(request, 'movies/movie_list.html', {'movies': movies, 'query': query})
+
+
+# 2. Thêm trang Chi Tiết Phim + Review (Thay vì chỉ xem suất chiếu)
+def movie_detail(request, movie_id):
+    movie = get_object_or_404(Movie, pk=movie_id)
+    reviews = movie.reviews.all()
+
+    # Xử lý form review
+    if request.method == 'POST' and request.user.is_authenticated:
+        form = ReviewForm(request.POST)
+        if form.is_valid():
+            review = form.save(commit=False)
+            review.movie = movie
+            review.user = request.user
+            review.save()
+            messages.success(request, "Cảm ơn bạn đã đánh giá!")
+            return redirect('movie_detail', movie_id=movie_id)
+    else:
+        form = ReviewForm()
+
+    return render(request, 'movies/movie_detail.html', {
+        'movie': movie,
+        'reviews': reviews,
+        'form': form
+    })
+
+
+# 3. Hàm Gửi Email (Helper function)
+def send_booking_email(booking):
+    subject = f'Vé xem phim: {booking.showtime.movie.title}'
+    html_message = render_to_string('movies/email_template.html', {'booking': booking})
+    plain_message = strip_tags(html_message)
+
+    send_mail(
+        subject,
+        plain_message,
+        'booking@cinemapro.vn',
+        [booking.user.email],
+        html_message=html_message,
+    )
+
+
+# 4. Hàm Thanh Toán (Giả lập)
+@login_required(login_url='login')
+def pay_booking(request, booking_id):
+    booking = get_object_or_404(Booking, pk=booking_id, user=request.user)
+
+    if booking.status == 'PENDING':
+        booking.status = 'PAID'
+        booking.payment_method = 'VNPAY_Sandbox'  # Giả lập
+        booking.paid_at = timezone.now()
+        booking.save()
+
+        # Gửi email sau khi thanh toán thành công
+        try:
+            send_booking_email(booking)
+            messages.success(request, "Thanh toán thành công! Vé đã được gửi tới Email.")
+        except Exception as e:
+            messages.warning(request, "Thanh toán thành công nhưng không gửi được mail.")
+
+    return redirect('booking_success', booking_id=booking.id)
+
+
+# 5. Hàm Quản lý Profile
+@login_required(login_url='login')
+def profile_view(request):
+    if request.method == 'POST':
+        form = UserUpdateForm(request.POST, instance=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Cập nhật thông tin thành công!")
+            return redirect('profile')
+    else:
+        form = UserUpdateForm(instance=request.user)
+    return render(request, 'movies/profile.html', {'form': form})

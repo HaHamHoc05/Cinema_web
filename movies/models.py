@@ -365,3 +365,18 @@ class Review(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.movie.title} - {self.rating}★"
+
+# Model Combo Bắp Nước
+class Concession(models.Model):
+    name = models.CharField(max_length=100, verbose_name="Tên Combo")
+    description = models.TextField(verbose_name="Mô tả")
+    price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Giá")
+    image = models.ImageField(upload_to='concessions/', null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.name} - {self.price:,.0f}đ"
+
+class BookingConcession(models.Model):
+    booking = models.ForeignKey(Booking, related_name='concessions', on_delete=models.CASCADE)
+    concession = models.ForeignKey(Concession, on_delete=models.CASCADE)
+    quantity = models.IntegerField(default=1)

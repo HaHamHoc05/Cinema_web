@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<body>
+    <h2 style="color: #dc0714;">Cảm ơn bạn đã đặt vé tại Cinema Pro!</h2>
+    <p>Xin chào {{ booking.user.first_name }},</p>
+    <p>Vé của bạn đã được thanh toán thành công.</p>
+
+    <div style="border: 1px solid #ccc; padding: 15px; background: #f9f9f9;">
+        <h3>MÃ VÉ: {{ booking.booking_code }}</h3>
+        <p><strong>Phim:</strong> {{ booking.showtime.movie.title }}</p>
+        <p><strong>Rạp:</strong> {{ booking.showtime.screen.cinema.name }} - Phòng {{ booking.showtime.screen.name }}</p>
+        <p><strong>Suất chiếu:</strong> {{ booking.showtime.start_time|date:"H:i d/m/Y" }}</p>
+        <p><strong>Ghế:</strong>
+            {% for ticket in booking.tickets.all %}
+                {{ ticket.seat.row }}{{ ticket.seat.number }}
+            {% endfor %}
+        </p>
+    </div>
+    <p>Vui lòng đưa mã này cho nhân viên soát vé.</p>
+</body>
+</html>

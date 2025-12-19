@@ -2,60 +2,163 @@
 
 {% block extra_css %}
 <style>
-    /* CSS Riêng cho trang Auth */
+    /* Ghi đè background chỉ riêng cho trang Auth */
     body {
-        /* Ảnh nền rạp phim mờ tối */
-        background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.8)),
+        background: linear-gradient(to right, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.6)),
                     url('https://assets.nflxext.com/ffe/siteui/vlv3/f841d4c7-10e1-40af-bcae-07a3f8dc141a/f6d7434e-d6de-4185-a6d4-c77a2d08737b/VN-vi-20220502-popsignuptwoweeks-perspective_alpha_website_medium.jpg');
         background-size: cover;
         background-position: center;
         background-repeat: no-repeat;
-        height: 100vh;
-        overflow: hidden; /* Ẩn thanh cuộn thừa */
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
     }
 
+    /* Hiệu ứng kính mờ (Glassmorphism) */
     .auth-card {
-        background-color: rgba(0, 0, 0, 0.75); /* Màu đen trong suốt */
-        border-radius: 8px;
-        border: 1px solid #333;
-        padding: 40px;
-        box-shadow: 0 15px 25px rgba(0,0,0,0.6);
-        backdrop-filter: blur(5px); /* Hiệu ứng mờ nền sau lưng */
+        background: rgba(20, 20, 20, 0.85);
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 16px;
+        padding: 3rem;
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.8);
         max-width: 450px;
-        margin: 0 auto;
+        width: 100%;
+        margin: auto; /* Căn giữa màn hình */
+        transition: transform 0.3s ease;
     }
 
-    /* Style lại ô input cho hợp màu tối */
+    .auth-card:hover {
+        transform: translateY(-5px);
+        border-color: rgba(220, 7, 20, 0.3);
+    }
+
+    .auth-title {
+        font-weight: 700;
+        color: white;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 2rem;
+        text-align: center;
+    }
+
+    /* Tùy chỉnh Input Floating của Bootstrap */
     .form-floating > .form-control {
         background-color: #333;
-        border: none;
-        color: #fff;
+        border: 1px solid #444;
+        color: white;
+        border-radius: 8px;
     }
 
     .form-floating > .form-control:focus {
-        background-color: #444;
-        box-shadow: none;
-        border-bottom: 2px solid #e50914; /* Gạch chân đỏ khi nhập */
+        background-color: #404040;
+        border-color: var(--primary-red);
+        box-shadow: 0 0 0 0.25rem rgba(220, 7, 20, 0.25);
     }
 
     .form-floating > label {
-        color: #8c8c8c;
+        color: #aaa;
     }
 
-    .btn-login {
-        background-color: #e50914;
-        font-weight: bold;
-        padding: 12px;
-        font-size: 16px;
-        transition: all 0.3s;
+    .form-floating > .form-control:focus ~ label,
+    .form-floating > .form-control:not(:placeholder-shown) ~ label {
+        color: rgba(255, 255, 255, 0.7);
+        transform: scale(.85) translateY(-0.5rem) translateX(0.15rem);
     }
 
-    .btn-login:hover {
-        background-color: #f40612;
-        transform: scale(1.02);
+    /* Checkbox & Links */
+    .form-check-input {
+        background-color: #333;
+        border-color: #555;
+    }
+    .form-check-input:checked {
+        background-color: var(--primary-red);
+        border-color: var(--primary-red);
     }
 
-    .auth-footer {
-        color: #737373;
-        font-size: 14px;
-        margin-top:
+    .auth-link {
+        color: #aaa;
+        text-decoration: none;
+        transition: color 0.2s;
+        font-size: 0.9rem;
+    }
+    .auth-link:hover {
+        color: var(--primary-red);
+    }
+
+    .divider {
+        display: flex;
+        align-items: center;
+        text-align: center;
+        color: #555;
+        margin: 1.5rem 0;
+    }
+    .divider::before, .divider::after {
+        content: '';
+        flex: 1;
+        border-bottom: 1px solid #444;
+    }
+    .divider span {
+        padding: 0 10px;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="flex-grow-1 d-flex align-items-center justify-content-center py-5">
+    <div class="auth-card">
+        <h2 class="auth-title">Đăng Nhập</h2>
+
+        <form method="POST">
+            {% csrf_token %}
+
+            {% if request.GET.next %}
+                <input type="hidden" name="next" value="{{ request.GET.next }}">
+            {% endif %}
+
+            {% if form.errors %}
+                <div class="alert alert-danger d-flex align-items-center p-2 mb-3 small" role="alert">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <div>Tên đăng nhập hoặc mật khẩu không đúng.</div>
+                </div>
+            {% endif %}
+
+            <div class="form-floating mb-3">
+                <input type="text" name="username" class="form-control" id="floatingInput" placeholder="Username" required autofocus>
+                <label for="floatingInput">Tên đăng nhập</label>
+            </div>
+
+            <div class="form-floating mb-3">
+                <input type="password" name="password" class="form-control" id="floatingPassword" placeholder="Password" required>
+                <label for="floatingPassword">Mật khẩu</label>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="rememberMe">
+                    <label class="form-check-label text-secondary small" for="rememberMe">
+                        Ghi nhớ tôi
+                    </label>
+                </div>
+                <a href="#" class="auth-link">Quên mật khẩu?</a>
+            </div>
+
+            <button type="submit" class="btn btn-danger w-100 py-3 fw-bold text-uppercase shadow-sm">
+                Đăng Nhập
+            </button>
+
+            <div class="divider">
+                <span>Hoặc</span>
+            </div>
+
+            <div class="text-center text-light">
+                <span class="text-muted">Chưa có tài khoản?</span>
+                <a href="{% url 'register' %}" class="fw-bold ms-1 text-white text-decoration-none">Đăng ký ngay <i class="fas fa-arrow-right ms-1 text-danger"></i></a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
