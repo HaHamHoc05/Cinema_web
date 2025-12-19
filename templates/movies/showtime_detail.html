@@ -2,7 +2,7 @@
 
 {% block extra_css %}
 <style>
-    /* Màn hình chiếu 3D */
+    /* 3D Screen */
     .screen-container { perspective: 1000px; margin-bottom: 50px; text-align: center; }
     .screen-display {
         background: linear-gradient(to bottom, #fff, rgba(255,255,255,0));
@@ -13,72 +13,34 @@
     }
     .screen-text { font-size: 0.8rem; letter-spacing: 4px; color: #888; margin-top: 15px; display: block; }
 
-    /* --- SETUP GHẾ NGỒI --- */
+    /* Ghế ngồi */
     .seat-checkbox { display: none; }
 
     .seat-label {
         width: 40px; height: 40px;
-        background-color: #444; /* Màu mặc định ghế thường */
-        border-radius: 8px 8px 12px 12px;
-        margin: 4px;
-        display: flex; align-items: center; justify-content: center;
-        font-size: 11px; color: #ccc;
-        cursor: pointer; transition: 0.2s;
-        border-bottom: 3px solid #222;
-        user-select: none;
-        position: relative;
-        font-weight: 600;
+        background-color: #444; border-radius: 8px 8px 12px 12px;
+        margin: 4px; display: flex; align-items: center; justify-content: center;
+        font-size: 11px; color: #ccc; cursor: pointer; transition: 0.2s;
+        border-bottom: 3px solid #222; user-select: none; font-weight: 600;
     }
 
-    /* --- PHÂN LOẠI MÀU SẮC GHẾ --- */
+    /* Loại ghế */
+    .seat-label.vip { border: 1px solid #ffd700; color: #ffd700; box-shadow: inset 0 0 5px rgba(255, 215, 0, 0.2); }
+    .seat-label.couple { background-color: #9c27b0; border-bottom-color: #6a1b9a; color: white; width: 46px; }
 
-    /* 1. Ghế VIP: Viền vàng, icon vương miện ẩn (nếu muốn thêm) */
-    .seat-label.vip {
-        border: 1px solid #ffd700;
-        box-shadow: inset 0 0 5px rgba(255, 215, 0, 0.2);
-        color: #ffd700;
-    }
-
-    /* 2. Ghế Đôi (Couple): Màu hồng tím */
-    .seat-label.couple {
-        background-color: #9c27b0;
-        border-bottom-color: #6a1b9a;
-        color: white;
-        width: 46px; /* Rộng hơn chút */
-    }
-
-    /* --- TRẠNG THÁI --- */
-
-    .seat-label:hover:not(.occupied) {
-        transform: scale(1.15);
-        filter: brightness(1.2);
-        z-index: 5;
-    }
-
-    /* Đang chọn (Checked) */
+    /* Trạng thái */
+    .seat-label:hover:not(.occupied) { transform: scale(1.15); filter: brightness(1.2); z-index: 5; }
     .seat-checkbox:checked + .seat-label {
-        background-color: var(--primary-red) !important;
-        color: #fff !important;
-        border-color: var(--primary-red) !important;
-        box-shadow: 0 0 15px rgba(229, 9, 20, 0.8);
-        transform: scale(1.1);
-        z-index: 10;
+        background-color: var(--primary-red) !important; color: #fff !important;
+        border-color: var(--primary-red) !important; box-shadow: 0 0 15px rgba(229, 9, 20, 0.8);
+        transform: scale(1.1); z-index: 10;
     }
+    .seat-label.occupied { background-color: #222 !important; color: #444; border-color: #333 !important; cursor: not-allowed; }
 
-    /* Đã bán (Occupied) */
-    .seat-label.occupied {
-        background-color: #222 !important;
-        color: #444;
-        border-color: #333 !important;
-        cursor: not-allowed;
-        box-shadow: none;
-    }
-
-    /* Responsive & Layout */
     .seat-map-wrapper { overflow-x: auto; padding-bottom: 20px; white-space: nowrap; }
     .booking-sidebar { position: sticky; top: 90px; }
 
-    /* Chú thích màu */
+    /* Chú thích */
     .legend-item { display: flex; align-items: center; font-size: 0.85rem; color: #ccc; margin-right: 15px; }
     .legend-box { width: 20px; height: 20px; margin-right: 8px; border-radius: 4px; }
 </style>
@@ -92,7 +54,7 @@
                 <div class="position-relative">
                     <img src="{{ showtime.movie.poster.url }}" class="w-100" style="height: 200px; object-fit: cover; opacity: 0.5;" alt="">
                     <div class="position-absolute bottom-0 start-0 p-3 w-100" style="background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);">
-                        <h4 class="fw-bold text-white mb-0 text-shadow">{{ showtime.movie.title }}</h4>
+                        <h4 class="fw-bold text-white mb-0">{{ showtime.movie.title }}</h4>
                     </div>
                 </div>
 
@@ -102,12 +64,11 @@
                         <li class="mb-2 d-flex justify-content-between"><span>Phòng:</span> <span class="fw-bold text-white">{{ showtime.screen.name }}</span></li>
                         <li class="mb-2 d-flex justify-content-between"><span>Suất:</span> <span class="fw-bold text-danger">{{ showtime.start_time|date:"H:i - d/m/Y" }}</span></li>
                     </ul>
-
                     <hr class="border-secondary">
 
                     <div class="mb-3">
                         <span class="text-muted d-block mb-1">Ghế đang chọn:</span>
-                        <div id="seat-list" class="fw-bold text-danger fs-5" style="min-height: 30px;">
+                        <div id="seat-list" class="fw-bold text-danger fs-5 text-break">
                             <span class="text-muted small fw-normal">Chưa chọn ghế</span>
                         </div>
                     </div>
@@ -124,16 +85,13 @@
                     ĐẶT VÉ NGAY
                 </button>
             {% else %}
-                <a href="{% url 'login' %}?next={{ request.path }}" class="btn btn-warning w-100 btn-lg mt-3 fw-bold">
-                    Đăng nhập để đặt vé
-                </a>
+                <a href="{% url 'login' %}?next={{ request.path }}" class="btn btn-warning w-100 btn-lg mt-3 fw-bold">Đăng nhập để đặt vé</a>
             {% endif %}
         </div>
     </div>
 
     <div class="col-lg-8 order-lg-2 order-1">
         <div class="card bg-dark border border-secondary p-4 h-100 shadow-sm">
-
             {% if user.is_authenticated %}
                 <div class="screen-container">
                     <div class="screen-display"></div>
@@ -144,25 +102,18 @@
                     {% csrf_token %}
                     <div class="seat-map-wrapper d-flex flex-column align-items-center">
                         {% regroup all_seats by row as seat_rows %}
-
                         {% for row in seat_rows %}
                         <div class="d-flex mb-2 align-items-center">
                             <span class="text-muted fw-bold me-3 text-center" style="width: 25px;">{{ row.grouper }}</span>
-
                             {% for seat in row.list %}
                                 {% if seat.id in occupied_seats %}
-                                    <label class="seat-label occupied {{ seat.seat_type|lower }}" title="Đã bán">
-                                        {{ seat.number }}
-                                    </label>
+                                    <label class="seat-label occupied {{ seat.seat_type|lower }}" title="Đã bán">{{ seat.number }}</label>
                                 {% else %}
                                     <input type="checkbox" name="selected_seats" value="{{ seat.id }}"
                                            id="seat-{{ seat.id }}" class="seat-checkbox"
-                                           data-seat-name="{{ row.grouper }}{{ seat.number }}"
-                                           data-seat-type="{{ seat.seat_type }}">
-
-                                    <label for="seat-{{ seat.id }}" class="seat-label {{ seat.seat_type|lower }}">
-                                        {{ seat.number }}
-                                    </label>
+                                           data-name="{{ row.grouper }}{{ seat.number }}"
+                                           data-type="{{ seat.seat_type }}">
+                                    <label for="seat-{{ seat.id }}" class="seat-label {{ seat.seat_type|lower }}">{{ seat.number }}</label>
                                 {% endif %}
                             {% endfor %}
                         </div>
@@ -177,7 +128,6 @@
                     <div class="legend-item"><div class="legend-box" style="background: #222; border: 1px solid #333;"></div> Đã bán</div>
                     <div class="legend-item"><div class="legend-box" style="background: var(--primary-red);"></div> Đang chọn</div>
                 </div>
-
             {% else %}
                 <div class="text-center py-5">
                     <i class="fas fa-lock fa-4x text-muted mb-3 opacity-50"></i>
@@ -197,45 +147,40 @@
         const seatListEl = document.getElementById('seat-list');
         const btnSubmit = document.getElementById('btn-submit');
 
-        // Giá cơ bản từ Server
+        // Giá gốc từ server
         const basePrice = {{ showtime.base_price }};
 
         function updateSummary() {
             let total = 0;
-            let selectedSeats = []; // Mảng chứa tên các ghế đã chọn (A1, B2...)
+            let selectedSeats = [];
 
             checkboxes.forEach(cb => {
                 if (cb.checked) {
-                    // 1. Tính tiền dựa trên loại ghế (Giả lập logic cộng thêm tiền)
                     let price = basePrice;
-                    const type = cb.dataset.seatType; // Lấy loại ghế từ data attribute
+                    const type = cb.dataset.type; // Lấy loại ghế từ data attribute
 
-                    if (type === 'VIP') price += 10000;      // VIP cộng 10k
-                    if (type === 'COUPLE') price += 20000;   // Couple cộng 20k
+                    // Logic cộng tiền ghế VIP/Đôi
+                    if (type === 'VIP') price += 10000;
+                    if (type === 'COUPLE') price += 20000;
 
                     total += price;
-
-                    // 2. Lấy tên ghế (VD: A1) đẩy vào mảng
-                    selectedSeats.push(cb.dataset.seatName);
+                    selectedSeats.push(cb.dataset.name); // Lấy tên ghế (A1, A2)
                 }
             });
 
             // Cập nhật giao diện
-            // Hiển thị tiền
             totalPriceEl.textContent = total.toLocaleString('vi-VN') + ' đ';
 
-            // Hiển thị danh sách ghế
             if (selectedSeats.length > 0) {
-                seatListEl.textContent = selectedSeats.join(', '); // Nối mảng thành chuỗi: "A1, A2"
-                seatListEl.classList.remove('text-muted', 'fw-normal', 'small'); // Style đậm
-                if(btnSubmit) btnSubmit.removeAttribute('disabled'); // Mở khóa nút đặt vé
+                seatListEl.textContent = selectedSeats.join(', ');
+                seatListEl.classList.remove('text-muted', 'fw-normal', 'small');
+                if(btnSubmit) btnSubmit.removeAttribute('disabled'); // Mở khóa nút
             } else {
                 seatListEl.innerHTML = '<span class="text-muted small fw-normal">Chưa chọn ghế</span>';
-                if(btnSubmit) btnSubmit.setAttribute('disabled', 'true'); // Khóa nút nếu chưa chọn
+                if(btnSubmit) btnSubmit.setAttribute('disabled', 'true'); // Khóa nút
             }
         }
 
-        // Gắn sự kiện click cho tất cả ghế
         checkboxes.forEach(cb => cb.addEventListener('change', updateSummary));
     });
 </script>
