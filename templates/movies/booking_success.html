@@ -2,83 +2,49 @@
 
 {% block extra_css %}
 <style>
-    .ticket-container {
-        background-color: #fff;
-        color: #333;
-        border-radius: 16px;
-        overflow: hidden;
-        position: relative;
-        max-width: 600px;
-        margin: 0 auto;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    .ticket-stub {
+        background: #fff; color: #222; border-radius: 16px; overflow: hidden;
+        position: relative; max-width: 600px; margin: 0 auto;
+        box-shadow: 0 15px 35px rgba(0,0,0,0.5);
     }
-
-    /* Đường cắt vé */
-    .ticket-rip {
-        border-bottom: 2px dashed #ccc;
-        position: relative;
-        margin: 20px 0;
+    .ticket-dotted-line {
+        border-bottom: 3px dashed #ddd; position: relative; margin: 25px 0;
     }
-    .ticket-rip::before, .ticket-rip::after {
-        content: '';
-        position: absolute;
-        bottom: -10px;
-        width: 20px;
-        height: 20px;
-        background-color: var(--dark-bg); /* Màu trùng với nền web */
-        border-radius: 50%;
+    .ticket-dotted-line::before, .ticket-dotted-line::after {
+        content: ''; position: absolute; bottom: -12px; width: 24px; height: 24px;
+        background-color: var(--dark-bg); border-radius: 50%;
     }
-    .ticket-rip::before { left: -10px; }
-    .ticket-rip::after { right: -10px; }
-
-    .qr-placeholder {
-        width: 100px;
-        height: 100px;
-        background-color: #eee;
-        margin: 0 auto;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 0.8rem;
-    }
+    .ticket-dotted-line::before { left: -12px; }
+    .ticket-dotted-line::after { right: -12px; }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="py-5">
-    <div class="text-center mb-4">
-        <div class="display-1 text-success mb-2"><i class="fas fa-check-circle"></i></div>
-        <h2 class="text-white">Đặt Vé Thành Công!</h2>
-        <p class="text-muted">Vui lòng đưa mã vé này cho nhân viên tại quầy.</p>
+<div class="py-5 text-center">
+    <div class="mb-4">
+        <div class="text-success mb-2" style="font-size: 4rem;"><i class="fas fa-check-circle"></i></div>
+        <h2 class="text-white fw-bold">ĐẶT VÉ THÀNH CÔNG!</h2>
+        <p class="text-muted">Mã vé đã được tạo. Vui lòng thanh toán để hoàn tất.</p>
     </div>
 
-    <div class="ticket-container">
-        <div class="p-4 bg-danger text-white text-center">
-            <h3 class="fw-bold mb-1">{{ booking.showtime.movie.title }}</h3>
-            <p class="mb-0 opacity-75">{{ booking.showtime.movie.rating }}</p>
+    <div class="ticket-stub text-start">
+        <div class="p-4 bg-danger text-white">
+            <h4 class="fw-bold mb-1">{{ booking.showtime.movie.title }}</h4>
+            <div class="opacity-75 small">
+                <i class="fas fa-map-marker-alt me-1"></i> {{ booking.showtime.screen.cinema.name }} &bull; {{ booking.showtime.screen.name }}
+            </div>
         </div>
 
         <div class="p-4">
             <div class="row mb-3">
                 <div class="col-6">
-                    <small class="text-muted text-uppercase">Rạp</small>
-                    <div class="fw-bold">{{ booking.showtime.screen.cinema.name }}</div>
+                    <small class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem;">Suất chiếu</small>
+                    <div class="fs-5 fw-bold">{{ booking.showtime.start_time|date:"H:i" }}</div>
+                    <small class="text-muted">{{ booking.showtime.start_time|date:"d/m/Y" }}</small>
                 </div>
                 <div class="col-6 text-end">
-                    <small class="text-muted text-uppercase">Phòng</small>
-                    <div class="fw-bold">{{ booking.showtime.screen.name }}</div>
-                </div>
-            </div>
-
-            <div class="row mb-3">
-                <div class="col-6">
-                    <small class="text-muted text-uppercase">Suất chiếu</small>
-                    <div class="fw-bold fs-5">{{ booking.showtime.start_time|date:"H:i" }}</div>
-                    <small>{{ booking.showtime.start_time|date:"d/m/Y" }}</small>
-                </div>
-                <div class="col-6 text-end">
-                    <small class="text-muted text-uppercase">Ghế</small>
-                    <div class="fw-bold fs-5 text-danger">
+                    <small class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem;">Ghế</small>
+                    <div class="fs-5 fw-bold text-danger">
                         {% for ticket in booking.tickets.all %}
                             {{ ticket.seat.row }}{{ ticket.seat.number }}{% if not forloop.last %}, {% endif %}
                         {% endfor %}
@@ -86,30 +52,32 @@
                 </div>
             </div>
 
-            <div class="ticket-rip"></div>
+            <div class="ticket-dotted-line"></div>
 
             <div class="row align-items-center">
-                <div class="col-8">
-                    <small class="text-muted text-uppercase">Mã đặt vé</small>
-                    <h2 class="fw-bold text-dark letter-spacing-2">{{ booking.booking_code }}</h2>
-                    <div class="badge bg-warning text-dark">Chờ thanh toán: {{ booking.total_amount|floatformat:0 }} đ</div>
+                <div class="col-7">
+                    <small class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem;">Mã đặt vé</small>
+                    <h2 class="fw-bold text-dark ls-2 mb-0">{{ booking.booking_code }}</h2>
                 </div>
-                <div class="col-4 text-end">
-                    <div class="qr-placeholder rounded border">
-                        <i class="fas fa-qrcode fa-2x text-muted"></i>
-                    </div>
+                <div class="col-5 text-end">
+                    <small class="text-muted d-block">Tổng tiền</small>
+                    <span class="fs-4 fw-bold text-danger">{{ booking.total_amount|floatformat:0 }} đ</span>
                 </div>
             </div>
         </div>
-    </div>
 
-    <div class="text-center mt-4">
-        <a href="/" class="btn btn-outline-light rounded-pill px-4">
-            <i class="fas fa-home me-2"></i>Về Trang Chủ
-        </a>
-        <a href="{% url 'my_tickets' %}" class="btn btn-primary rounded-pill px-4 ms-2">
-            Xem Vé Của Tôi
-        </a>
+        <div class="p-3 bg-light border-top d-grid gap-2">
+            {% if booking.status == 'PENDING' %}
+                <a href="{% url 'pay_booking' booking.id %}" class="btn btn-success btn-lg fw-bold shadow-sm py-3">
+                    <i class="fas fa-credit-card me-2"></i>THANH TOÁN NGAY
+                </a>
+            {% endif %}
+
+            <div class="d-flex gap-2">
+                <a href="{% url 'movie_list' %}" class="btn btn-outline-dark w-50 fw-bold">Trang chủ</a>
+                <a href="{% url 'my_tickets' %}" class="btn btn-outline-danger w-50 fw-bold">Ví vé</a>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}

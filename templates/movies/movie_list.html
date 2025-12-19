@@ -2,95 +2,115 @@
 
 {% block extra_css %}
 <style>
-    #heroCarousel { margin-top: -24px; mask-image: linear-gradient(to bottom, black 80%, transparent 100%); }
-    .carousel-item img { height: 500px; object-fit: cover; filter: brightness(0.7); }
-    .carousel-caption { background: linear-gradient(to top, rgba(0,0,0,0.9), transparent); bottom: 0; padding-bottom: 3rem; }
-
-    .movie-card { height: 100%; position: relative; overflow: hidden; border-radius: 12px; transition: 0.3s; }
-    .movie-card:hover { transform: scale(1.03); box-shadow: 0 0 20px rgba(220, 7, 20, 0.4); z-index: 10; }
-
-    .movie-poster { height: 400px; object-fit: cover; width: 100%; transition: filter 0.3s; }
-    .movie-card:hover .movie-poster { filter: brightness(0.4); }
-
-    .movie-overlay {
-        position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-        display: flex; flex-direction: column; justify-content: center; align-items: center;
-        opacity: 0; transition: opacity 0.3s; padding: 1rem; text-align: center;
+    .movie-card {
+        transition: transform 0.3s;
+        border: 1px solid #444; /* Viền sáng hơn */
+        box-shadow: 0 4px 10px rgba(0,0,0,0.5);
     }
-    .movie-card:hover .movie-overlay { opacity: 1; }
-
-    .rating-badge { position: absolute; top: 10px; right: 10px; background: var(--primary-red); color: white; padding: 5px 10px; border-radius: 4px; font-weight: bold; z-index: 5; }
+    .movie-card:hover {
+        transform: translateY(-5px);
+        border-color: var(--primary-red);
+        box-shadow: 0 10px 20px rgba(255, 30, 30, 0.2);
+    }
+    .card-img-top {
+        height: 350px;
+        object-fit: cover;
+    }
+    /* Badge Lịch chiếu nổi bật */
+    .showtime-badge {
+        background-color: #333;
+        color: #fff;
+        border: 1px solid #555;
+        font-size: 0.85rem;
+        padding: 5px 10px;
+        border-radius: 5px;
+        margin-right: 5px;
+        margin-bottom: 5px;
+        display: inline-block;
+        text-decoration: none;
+        transition: 0.2s;
+    }
+    .showtime-badge:hover {
+        background-color: var(--primary-red);
+        border-color: var(--primary-red);
+        color: white;
+    }
 </style>
 {% endblock %}
 
 {% block content %}
-<div id="heroCarousel" class="carousel slide mb-5" data-bs-ride="carousel">
-    <div class="carousel-inner">
-        <div class="carousel-item active">
-            <img src="https://wallpapers.com/images/hd/avengers-endgame-desktop-u26252433s2i872o.jpg" class="d-block w-100" alt="Banner 1">
-            <div class="carousel-caption">
-                <h1 class="display-4 fw-bold text-uppercase" style="text-shadow: 2px 2px 10px black;">Bom Tấn Tháng 12</h1>
-                <p class="lead">Trải nghiệm điện ảnh đỉnh cao tại Cinema Pro</p>
-            </div>
-        </div>
+<div class="mb-5 rounded overflow-hidden position-relative shadow-lg">
+    <img src="https://wallpapers.com/images/hd/avengers-endgame-desktop-u26252433s2i872o.jpg" class="w-100" style="height: 400px; object-fit: cover; filter: brightness(0.7);">
+    <div class="position-absolute bottom-0 start-0 p-5 text-white">
+        <h1 class="fw-bold display-4 text-uppercase">Phim Hot Tuần Này</h1>
+        <a href="#list" class="btn btn-danger btn-lg mt-2 fw-bold">Mua Vé Ngay</a>
     </div>
 </div>
 
-<div class="container" id="movie-list">
-    <div class="d-flex align-items-center mb-4">
-        <div class="bg-danger me-3" style="width: 5px; height: 30px;"></div>
-        <h2 class="text-uppercase fw-bold m-0 text-white">Phim Đang Chiếu</h2>
-    </div>
+<div id="list" class="d-flex align-items-center mb-4 border-bottom border-secondary pb-2">
+    <h2 class="text-uppercase text-white m-0"><i class="fas fa-play-circle text-danger me-2"></i>Phim Đang Chiếu</h2>
+</div>
 
-    <div class="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-4">
-        {% for movie in movies %}
-        <div class="col">
-            <div class="card movie-card bg-dark border-0">
-                <div class="position-relative h-100">
-                    <span class="rating-badge">{{ movie.rating }}</span>
-
-                    <a href="{% url 'movie_detail' movie.id %}">
-                        {% if movie.poster %}
-                            <img src="{{ movie.poster.url }}" class="movie-poster" alt="{{ movie.title }}">
-                        {% else %}
-                            <div class="d-flex align-items-center justify-content-center bg-secondary text-white movie-poster">
-                                <i class="fas fa-film fa-3x"></i>
-                            </div>
-                        {% endif %}
-                    </a>
-
-                    <div class="movie-overlay">
-                        <h5 class="fw-bold mb-3 text-white">{{ movie.title }}</h5>
-                        <p class="small text-light mb-2"><i class="far fa-clock me-1 text-danger"></i> {{ movie.duration }} phút</p>
-
-                        <div class="d-grid gap-2 w-100 px-3">
-                            {% for showtime in movie.showtimes.all|slice:":2" %}
-                                {% if showtime.is_available %}
-                                <a href="{% url 'showtime_detail' showtime.id %}" class="btn btn-outline-light btn-sm rounded-pill">
-                                    {{ showtime.start_time|date:"H:i" }}
-                                </a>
-                                {% endif %}
-                            {% empty %}
-                                <span class="badge bg-secondary">Hết suất chiếu</span>
-                            {% endfor %}
-
-                            <a href="{% url 'movie_detail' movie.id %}" class="btn btn-danger btn-sm mt-2 rounded-pill">Xem chi tiết & Review</a>
+<div class="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-4">
+    {% for movie in movies %}
+    <div class="col">
+        <div class="card movie-card h-100 bg-dark">
+            <div class="position-relative">
+                <span class="position-absolute top-0 end-0 bg-danger text-white fw-bold px-2 py-1 m-2 rounded shadow">
+                    {{ movie.rating }}
+                </span>
+                <a href="{% url 'movie_detail' movie.id %}">
+                    {% if movie.poster %}
+                        <img src="{{ movie.poster.url }}" class="card-img-top" alt="{{ movie.title }}">
+                    {% else %}
+                        <div class="card-img-top bg-secondary d-flex align-items-center justify-content-center">
+                            <i class="fas fa-film fa-3x text-dark"></i>
                         </div>
-                    </div>
-                </div>
+                    {% endif %}
+                </a>
+            </div>
 
-                <div class="card-footer bg-transparent border-0 pt-3">
-                    <a href="{% url 'movie_detail' movie.id %}" class="text-white text-decoration-none">
-                        <h6 class="text-truncate fw-bold mb-0 text-center">{{ movie.title }}</h6>
+            <div class="card-body">
+                <h5 class="card-title text-truncate mb-1">
+                    <a href="{% url 'movie_detail' movie.id %}" class="text-white text-decoration-none fw-bold">
+                        {{ movie.title }}
                     </a>
+                </h5>
+                <p class="text-muted small mb-3">
+                    <i class="far fa-clock me-1"></i>{{ movie.duration }} phút
+                    | <i class="far fa-calendar me-1"></i>{{ movie.release_date|date:"d/m" }}
+                </p>
+
+                <div class="mb-3">
+                    <strong class="text-light d-block mb-2 small text-uppercase">Suất chiếu hôm nay:</strong>
+
+                    {% for showtime in movie.showtimes.all|slice:":4" %}
+                        {% if showtime.is_available %}
+                            <a href="{% url 'showtime_detail' showtime.id %}" class="showtime-badge">
+                                {{ showtime.start_time|date:"H:i" }}
+                            </a>
+                        {% endif %}
+                    {% empty %}
+                        <span class="text-muted small fst-italic">Chưa có lịch chiếu.</span>
+                    {% endfor %}
+
+                    {% if movie.showtimes.count > 4 %}
+                        <a href="{% url 'movie_detail' movie.id %}" class="text-danger small fw-bold text-decoration-none ms-1">Xem thêm >></a>
+                    {% endif %}
                 </div>
             </div>
+
+            <div class="card-footer bg-transparent border-top border-secondary p-3">
+                <a href="{% url 'movie_detail' movie.id %}" class="btn btn-outline-danger w-100 fw-bold">
+                    CHI TIẾT & ĐẶT VÉ
+                </a>
+            </div>
         </div>
-        {% empty %}
-        <div class="col-12 text-center py-5 text-muted">
-            <h3>Hiện chưa có phim nào khớp với từ khóa tìm kiếm.</h3>
-        </div>
-        {% endfor %}
     </div>
+    {% empty %}
+    <div class="col-12 text-center py-5">
+        <h4 class="text-muted">Không tìm thấy phim nào.</h4>
+    </div>
+    {% endfor %}
 </div>
 {% endblock %}
